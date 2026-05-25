@@ -1,4 +1,5 @@
 import { getAddress } from "viem";
+import type { Hash } from "viem";
 import {
   ARC_USDC_ABI,
   ARC_USDC_ADDRESS,
@@ -27,7 +28,14 @@ const BLOCKED_PATTERNS = [
   "this page doesn't exist",
 ];
 
-export function isFailedCapture(content, title) {
+function getErrorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
+}
+
+export function isFailedCapture(
+  content?: string | null,
+  title?: string | null,
+): "blocked_page" | "empty_content" | null {
   if (!content || content.length < 100) return "empty_content";
 
   const lower = content.toLowerCase();
@@ -50,7 +58,11 @@ export function isFailedCapture(content, title) {
   return null;
 }
 
-export async function sendRefund(payerAddress, amount, memo) {
+export async function sendRefund(
+  payerAddress: string,
+  amount: bigint | number | string,
+  memo: string,
+): Promise<Hash | null> {
   void memo;
 
   const refundPrivateKey = getRefundPrivateKey();
@@ -79,7 +91,7 @@ export async function sendRefund(payerAddress, amount, memo) {
     console.log(`Refund sent to ${to}: ${hash}`);
     return hash;
   } catch (err) {
-    console.error(`Refund failed for ${payerAddress}:`, err.message);
+    console.error(`Refund failed for ${payerAddress}:`, getErrorMessage(err));
     return null;
   }
 }

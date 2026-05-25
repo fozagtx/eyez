@@ -2,13 +2,19 @@
   "name": "eyez",
   "version": "1.0.0",
   "description": "Pay per capture headless browser API powered by x402 micropayments on Arc",
-  "main": "src/server.js",
+  "main": "dist/server.js",
   "packageManager": "pnpm@10.24.0",
   "scripts": {
-    "start": "node src/server.js",
-    "mcp": "node src/mcpServer.js",
-    "demo": "node src/demoClient.js",
-    "demo:logs": "node src/saveDemo.js",
+    "clean": "rm -rf dist",
+    "build": "tsc",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint .",
+    "check": "pnpm verify",
+    "verify": "pnpm lint && pnpm typecheck && pnpm build",
+    "start": "node dist/server.js",
+    "mcp": "node dist/mcpServer.js",
+    "demo": "node dist/demoClient.js",
+    "demo:logs": "node dist/saveDemo.js",
     "derive:address": "node deriveArcAddress.cjs"
   },
   "keywords": [
@@ -31,6 +37,16 @@
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
     "playwright": "^1.59.1",
-    "viem": "^2.47.14"
+    "viem": "^2.47.14",
+    "zod": "^3.25.76"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@types/express": "^5.0.6",
+    "@types/node": "^25.9.1",
+    "eslint": "^10.4.0",
+    "globals": "^17.6.0",
+    "typescript": "^6.0.3",
+    "typescript-eslint": "^8.59.4"
   }
 }

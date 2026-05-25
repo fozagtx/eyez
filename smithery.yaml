@@ -5,7 +5,7 @@ startCommand:
   type: stdio
   command: node
   args:
-    - src/mcpServer.js
+    - dist/mcpServer.js
   configSchema:
     type: object
     properties:

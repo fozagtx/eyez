@@ -47,6 +47,9 @@ cp .env.example .env
 ### Development Mode
 
 ```bash
+# Compile TypeScript
+pnpm build
+
 # Start the API server
 pnpm start
 ```
@@ -78,7 +81,7 @@ Generated files are saved in `docs/demoOutput/`.
   "mcpServers": {
     "eyez": {
       "command": "node",
-      "args": ["/absolute/path/to/eyez/src/mcpServer.js"],
+      "args": ["/absolute/path/to/eyez/dist/mcpServer.js"],
       "env": {
         "EVM_PRIVATE_KEY": "0x...",
         "EYEZ_URL": "http://localhost:3001"
@@ -93,6 +96,7 @@ The MCP tool is `capturePage`.
 ### Testing
 
 ```bash
+pnpm verify
 pnpm demo -- https://example.com
 ```
 
@@ -184,13 +188,13 @@ eyez/
 │   ├── index.html
 │   └── eyez.html
 ├── src/
-│   ├── arc.js             # Arc Testnet and x402 helpers
-│   ├── captureEngine.js   # Browser capture engine
-│   ├── demoClient.js      # Demo capture client
-│   ├── mcpServer.js       # MCP server with capturePage tool
-│   ├── refund.js          # Refund handling
-│   ├── saveDemo.js        # Demo log generator
-│   └── server.js          # Express API and x402 payment middleware
+│   ├── arc.ts             # Arc Testnet and x402 helpers
+│   ├── captureEngine.ts   # Browser capture engine
+│   ├── demoClient.ts      # Demo capture client
+│   ├── mcpServer.ts       # MCP server with capturePage tool
+│   ├── refund.ts          # Refund handling
+│   ├── saveDemo.ts        # Demo log generator
+│   └── server.ts          # Express API and x402 payment middleware
 ├── .dockerignore
 ├── .env.example
 ├── .gitignore
@@ -201,6 +205,7 @@ eyez/
 ├── eyezMcpStdio.example.json
 ├── package.json
 ├── pnpm-lock.yaml
+├── tsconfig.json
 └── smithery.yaml
 ```
 

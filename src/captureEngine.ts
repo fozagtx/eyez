@@ -1,11 +1,40 @@
-import { chromium } from "playwright";
+import { type Browser, type Page, chromium } from "playwright";
 
 const MAX_CONCURRENT = 3;
 const MAX_CONTENT_LENGTH = 100_000;
-let browserPromise = null;
+let browserPromise: Promise<Browser> | null = null;
 let activeCaptures = 0;
 
-async function getBrowser() {
+interface CaptureOptions {
+  timeout?: number;
+  scroll?: boolean;
+}
+
+export interface CapturedHeading {
+  level: string;
+  text: string;
+}
+
+export interface CapturedLink {
+  text: string;
+  href: string;
+}
+
+export interface CaptureResult {
+  title: string;
+  description: string;
+  headings: CapturedHeading[];
+  links: CapturedLink[];
+  content: string;
+  url: string;
+  capturedAt: string;
+}
+
+function getErrorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
+}
+
+async function getBrowser(): Promise<Browser> {
   if (!browserPromise) {
     browserPromise = chromium.launch({ headless: true }).catch((err) => {
       browserPromise = null;
@@ -15,20 +44,25 @@ async function getBrowser() {
   return browserPromise;
 }
 
-export async function captureUrl(url, { timeout = 30000, scroll = true } = {}) {
+export async function captureUrl(
+  url: string,
+  { timeout = 30000, scroll = true }: CaptureOptions = {},
+): Promise<CaptureResult> {
   if (activeCaptures >= MAX_CONCURRENT) {
     throw new Error("Too many concurrent captures, try again later");
   }
   activeCaptures++;
 
-  let page;
+  let page: Page | undefined;
   try {
     const b = await getBrowser();
     page = await b.newPage();
   } catch (err) {
     activeCaptures--;
     browserPromise = null; // Reset on browser failure
-    throw new Error(`Browser launch failed: ${err.message}`);
+    throw new Error(`Browser launch failed: ${getErrorMessage(err)}`, {
+      cause: err,
+    });
   }
 
   try {
@@ -63,7 +97,13 @@ export async function captureUrl(url, { timeout = 30000, scroll = true } = {}) {
       await page.waitForTimeout(500);
     }
 
-    const extracted = await page.evaluate(() => {
+    const extracted = await page.evaluate((): {
+      title: string;
+      description: string;
+      headings: CapturedHeading[];
+      links: CapturedLink[];
+      content: string;
+    } => {
       const remove = document.querySelectorAll(
         'script, style, nav[aria-label="Footer"], [role="complementary"]',
       );
@@ -71,16 +111,26 @@ export async function captureUrl(url, { timeout = 30000, scroll = true } = {}) {
 
       const title = document.title;
       const description =
-        document.querySelector('meta[name="description"]')?.content ||
-        document.querySelector('meta[property="og:description"]')?.content ||
+        (document.querySelector(
+          'meta[name="description"]',
+        ) as HTMLMetaElement | null)?.content ||
+        (document.querySelector(
+          'meta[property="og:description"]',
+        ) as HTMLMetaElement | null)?.content ||
         "";
       const headings = Array.from(
         document.querySelectorAll("h1, h2, h3"),
-        (el) => ({ level: el.tagName, text: el.innerText.trim() }),
+        (el) => ({
+          level: el.tagName,
+          text: (el as HTMLElement).innerText.trim(),
+        }),
       ).filter((h) => h.text.length > 0);
       const links = Array.from(
         document.querySelectorAll("a[href]"),
-        (el) => ({ text: el.innerText.trim(), href: el.href }),
+        (el) => ({
+          text: (el as HTMLElement).innerText.trim(),
+          href: (el as HTMLAnchorElement).href,
+        }),
       )
         .filter((l) => l.text.length > 0 && l.href.startsWith("http"))
         .slice(0, 50);
@@ -104,13 +154,14 @@ export async function captureUrl(url, { timeout = 30000, scroll = true } = {}) {
     };
   } catch (err) {
     // If page interaction fails, browser may be dead
-    if (err.message?.includes("Target closed") || err.message?.includes("Browser closed")) {
+    const message = getErrorMessage(err);
+    if (message.includes("Target closed") || message.includes("Browser closed")) {
       browserPromise = null;
     }
     throw err;
   } finally {
     activeCaptures--;
-    await page.close().catch(() => {});
+    await page?.close().catch(() => {});
   }
 }
 

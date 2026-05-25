@@ -1,7 +1,9 @@
 import "dotenv/config";
 import express from "express";
+import type { NextFunction, Request, Response } from "express";
 import { paymentMiddlewareFromConfig } from "@x402/express";
 import { ExactEvmScheme } from "@x402/evm/exact/server";
+import type { Address } from "viem";
 import { getAddress } from "viem";
 import {
   ARC_NETWORK,
@@ -14,7 +16,9 @@ import {
 import { captureUrl, closeBrowser } from "./captureEngine.js";
 import { isFailedCapture, sendRefund } from "./refund.js";
 
-const PORT = process.env.PORT || 3001;
+type DecodedUrlRequest = Request & { decodedUrl?: string };
+
+const PORT = Number(process.env.PORT || 3001);
 const NETWORK = ARC_NETWORK;
 const PAY_TO = process.env.PAY_TO ? getAddress(process.env.PAY_TO) : null;
 const FACILITATOR_PRIVATE_KEY = getFacilitatorPrivateKey();
@@ -29,7 +33,11 @@ if (!FACILITATOR_PRIVATE_KEY) {
   process.exit(1);
 }
 
-function isAllowedUrl(urlStr) {
+function getErrorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
+}
+
+function isAllowedUrl(urlStr: string): boolean {
   try {
     const parsed = new URL(urlStr);
     if (!["http:", "https:"].includes(parsed.protocol)) return false;
@@ -37,10 +45,14 @@ function isAllowedUrl(urlStr) {
     if (blocked.includes(parsed.hostname)) return false;
     if (parsed.hostname.startsWith("[")) return false; // block all IPv6 literals
     const parts = parsed.hostname.split(".");
-    if (parts[0] === "10") return false;
-    if (parts[0] === "172" && +parts[1] >= 16 && +parts[1] <= 31) return false;
-    if (parts[0] === "192" && parts[1] === "168") return false;
-    if (parts[0] === "169" && parts[1] === "254") return false;
+    const firstOctet = Number(parts[0]);
+    const secondOctet = Number(parts[1]);
+    if (firstOctet === 10) return false;
+    if (firstOctet === 172 && secondOctet >= 16 && secondOctet <= 31) {
+      return false;
+    }
+    if (firstOctet === 192 && secondOctet === 168) return false;
+    if (firstOctet === 169 && secondOctet === 254) return false;
     return true;
   } catch {
     return false;
@@ -48,7 +60,7 @@ function isAllowedUrl(urlStr) {
 }
 
 // Extract payer from the x402 payment header for Arc EVM refunds.
-function getPayerAddress(req) {
+function getPayerAddress(req: Request): Address | null {
   try {
     const header = req.get("payment-signature") || req.get("x-payment");
     if (!header) return null;
@@ -72,7 +84,7 @@ const app = express();
 const facilitator = createArcFacilitator(FACILITATOR_PRIVATE_KEY);
 
 // Info endpoint (free)
-app.get("/", (_, res) =>
+app.get("/", (_: Request, res: Response) =>
   res.json({
     service: "eyez",
     description: "Pay per capture headless browser API on Arc x402",
@@ -83,13 +95,15 @@ app.get("/", (_, res) =>
 );
 
 // Health check (free)
-app.get("/health", (_, res) => res.json({ status: "ok" }));
+app.get("/health", (_: Request, res: Response) => res.json({ status: "ok" }));
 
 // URL validation runs before payment to reject SSRF attempts early.
-app.use("/capture", (req, res, next) => {
+app.use("/capture", (req: Request, res: Response, next: NextFunction) => {
   const url = req.query.url;
-  if (!url) return res.status(400).json({ error: "Missing ?url= parameter" });
-  let decoded;
+  if (typeof url !== "string") {
+    return res.status(400).json({ error: "Missing ?url= parameter" });
+  }
+  let decoded: string;
   try {
     decoded = decodeURIComponent(url);
   } catch {
@@ -100,7 +114,7 @@ app.use("/capture", (req, res, next) => {
       .status(400)
       .json({ error: "URL not allowed — only public http/https URLs" });
   }
-  req.decodedUrl = decoded;
+  (req as DecodedUrlRequest).decodedUrl = decoded;
   next();
 });
 
@@ -125,8 +139,11 @@ app.use(
 );
 
 // Protected capture endpoint
-app.get("/capture", async (req, res) => {
-  const decoded = req.decodedUrl;
+app.get("/capture", async (req: Request, res: Response) => {
+  const decoded = (req as DecodedUrlRequest).decodedUrl;
+  if (!decoded) {
+    return res.status(400).json({ error: "Missing ?url= parameter" });
+  }
 
   try {
     console.log(`Capturing: ${decoded}`);
@@ -139,10 +156,20 @@ app.get("/capture", async (req, res) => {
       const payerAddress = getPayerAddress(req);
       let refund = null;
       if (payerAddress) {
-        console.log(`Bad capture (${failReason}) for ${decoded} - refunding ${payerAddress}`);
-        const refundHash = await sendRefund(payerAddress, REFUND_AMOUNT_USDC, `refund:${failReason}`);
+        console.log(
+          `Bad capture (${failReason}) for ${decoded} - refunding ${payerAddress}`,
+        );
+        const refundHash = await sendRefund(
+          payerAddress,
+          REFUND_AMOUNT_USDC,
+          `refund:${failReason}`,
+        );
         refund = refundHash
-          ? { transaction: refundHash, amount: `${REFUND_AMOUNT_USDC} USDC`, reason: failReason }
+          ? {
+              transaction: refundHash,
+              amount: `${REFUND_AMOUNT_USDC} USDC`,
+              reason: failReason,
+            }
           : { error: "Refund failed - contact support", reason: failReason };
       }
 
@@ -160,30 +187,39 @@ app.get("/capture", async (req, res) => {
       payment: { price: PRICE, network: NETWORK },
     });
   } catch (err) {
-    console.error(`Capture failed for ${decoded}:`, err.message);
-    if (err.message.includes("Too many concurrent")) {
-      return res.status(503).json({ error: err.message });
+    const message = getErrorMessage(err);
+    console.error(`Capture failed for ${decoded}:`, message);
+    if (message.includes("Too many concurrent")) {
+      return res.status(503).json({ error: message });
     }
     // Attempt refund on crash
     const payerAddress = getPayerAddress(req);
     let refund = null;
     if (payerAddress) {
-      const refundHash = await sendRefund(payerAddress, REFUND_AMOUNT_USDC, "refund:capture_crash");
+      const refundHash = await sendRefund(
+        payerAddress,
+        REFUND_AMOUNT_USDC,
+        "refund:capture_crash",
+      );
       refund = refundHash
-        ? { transaction: refundHash, amount: `${REFUND_AMOUNT_USDC} USDC`, reason: "capture_crash" }
+        ? {
+            transaction: refundHash,
+            amount: `${REFUND_AMOUNT_USDC} USDC`,
+            reason: "capture_crash",
+          }
         : { error: "Refund failed - contact support" };
     }
-    res.status(500).json({ error: "Capture failed", message: err.message, refund });
+    res.status(500).json({ error: "Capture failed", message, refund });
   }
 });
 
-const server = app.listen(Number(PORT), () => {
+const server = app.listen(PORT, () => {
   console.log(`eyez listening on http://localhost:${PORT}`);
   console.log(`  Pay ${PRICE} USDC on Arc Testnet (${NETWORK}) per capture`);
   console.log(`  Payments go to ${PAY_TO}`);
 });
 
-for (const sig of ["SIGTERM", "SIGINT"]) {
+for (const sig of ["SIGTERM", "SIGINT"] satisfies NodeJS.Signals[]) {
   process.on(sig, async () => {
     console.log(`${sig} received, shutting down...`);
     server.close();

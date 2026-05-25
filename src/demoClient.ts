@@ -16,7 +16,21 @@ if (!EVM_PRIVATE_KEY) {
 
 const targetUrl = process.argv[2] || "https://x.com/circle";
 
-async function main() {
+interface CaptureDemoResponse {
+  title?: string;
+  captureTimeMs?: number;
+  content?: string;
+}
+
+function getErrorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
+}
+
+async function main(): Promise<void> {
+  if (!EVM_PRIVATE_KEY) {
+    throw new Error("EVM_PRIVATE_KEY or ARC_PRIVATE_KEY not set in .env");
+  }
+
   const captureEndpoint = `${SERVER_URL}/capture?url=${encodeURIComponent(targetUrl)}`;
 
   // Setup x402 client
@@ -63,19 +77,20 @@ async function main() {
   console.log(`\n--- Result (${elapsed}ms) ---`);
   console.log(`Status: ${paidResponse.status}`);
 
-  let paymentResponse = null;
-  try {
-    paymentResponse = httpClient.getPaymentSettleResponse((name) =>
-      paidResponse.headers.get(name),
-    );
-  } catch {
-    paymentResponse = null;
-  }
+  const paymentResponse = (() => {
+    try {
+      return httpClient.getPaymentSettleResponse((name) =>
+        paidResponse.headers.get(name),
+      );
+    } catch {
+      return null;
+    }
+  })();
   if (paymentResponse) {
     console.log("Settlement:", JSON.stringify(paymentResponse, null, 2));
   }
 
-  const data = await paidResponse.json();
+  const data = (await paidResponse.json()) as CaptureDemoResponse;
   console.log(`\nTitle: ${data.title}`);
   console.log(`Capture time: ${data.captureTimeMs}ms`);
   console.log(`Content length: ${data.content?.length} chars`);
@@ -83,6 +98,6 @@ async function main() {
 }
 
 main().catch((err) => {
-  console.error("Client error:", err);
+  console.error("Client error:", getErrorMessage(err));
   process.exit(1);
 });

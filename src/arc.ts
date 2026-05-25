@@ -1,9 +1,12 @@
 import { x402Facilitator } from "@x402/core/facilitator";
+import type { FacilitatorClient } from "@x402/core/server";
+import type { Network, SupportedResponse } from "@x402/core/types";
 import { x402Client, x402HTTPClient } from "@x402/fetch";
 import { toClientEvmSigner, toFacilitatorEvmSigner } from "@x402/evm";
 import { registerExactEvmScheme as registerExactEvmClientScheme } from "@x402/evm/exact/client";
 import { registerExactEvmScheme as registerExactEvmFacilitatorScheme } from "@x402/evm/exact/facilitator";
 import {
+  type Hex,
   createPublicClient,
   createWalletClient,
   defineChain,
@@ -15,7 +18,7 @@ import {
 import { privateKeyToAccount } from "viem/accounts";
 
 export const ARC_CHAIN_ID = 5042002;
-export const ARC_NETWORK = `eip155:${ARC_CHAIN_ID}`;
+export const ARC_NETWORK = `eip155:${ARC_CHAIN_ID}` as Network;
 export const ARC_RPC_URL =
   process.env.ARC_RPC_URL ||
   process.env.RPC ||
@@ -70,33 +73,35 @@ export const ARC_USDC_ABI = [
     ],
     outputs: [{ name: "", type: "bool" }],
   },
-];
+] as const;
 
-export function parseUsdcUnits(amount) {
+export function parseUsdcUnits(amount: bigint | number | string): bigint {
   return parseUnits(String(amount), ARC_USDC_DECIMALS);
 }
 
-export function formatUsdcUnits(amount) {
+export function formatUsdcUnits(amount: bigint | number | string): string {
   return formatUnits(BigInt(amount), ARC_USDC_DECIMALS);
 }
 
-export function normalizePrivateKey(privateKey) {
+export function normalizePrivateKey(privateKey?: string | null): Hex | null {
   if (!privateKey) return null;
-  return privateKey.startsWith("0x") ? privateKey : `0x${privateKey}`;
+  return (privateKey.startsWith("0x") ? privateKey : `0x${privateKey}`) as Hex;
 }
 
-export function getClientPrivateKey() {
-  return normalizePrivateKey(process.env.EVM_PRIVATE_KEY || process.env.ARC_PRIVATE_KEY);
+export function getClientPrivateKey(): Hex | null {
+  return normalizePrivateKey(
+    process.env.EVM_PRIVATE_KEY || process.env.ARC_PRIVATE_KEY,
+  );
 }
 
-export function getFacilitatorPrivateKey() {
+export function getFacilitatorPrivateKey(): Hex | null {
   return normalizePrivateKey(
     process.env.FACILITATOR_PRIVATE_KEY ||
       process.env.ARC_FACILITATOR_PRIVATE_KEY,
   );
 }
 
-export function getRefundPrivateKey() {
+export function getRefundPrivateKey(): Hex | null {
   return normalizePrivateKey(
     process.env.REFUND_PRIVATE_KEY ||
       process.env.SERVER_PRIVATE_KEY ||
@@ -112,7 +117,7 @@ export function createArcPublicClient() {
   });
 }
 
-export function createArcWalletClient(privateKey) {
+export function createArcWalletClient(privateKey: Hex) {
   const account = privateKeyToAccount(privateKey);
   return createWalletClient({
     account,
@@ -121,7 +126,7 @@ export function createArcWalletClient(privateKey) {
   });
 }
 
-export function createArcPaymentClient(privateKey) {
+export function createArcPaymentClient(privateKey: Hex) {
   const account = privateKeyToAccount(privateKey);
   const publicClient = createArcPublicClient();
   const client = new x402Client();
@@ -141,7 +146,7 @@ export function createArcPaymentClient(privateKey) {
   };
 }
 
-export function createArcFacilitator(privateKey) {
+export function createArcFacilitator(privateKey: Hex): FacilitatorClient {
   const account = privateKeyToAccount(privateKey);
   const publicClient = createArcPublicClient();
   const walletClient = createArcWalletClient(privateKey);
@@ -152,7 +157,10 @@ export function createArcFacilitator(privateKey) {
     signer: toFacilitatorEvmSigner({
       address: account.address,
       readContract: (args) => publicClient.readContract(args),
-      verifyTypedData: (args) => publicClient.verifyTypedData(args),
+      verifyTypedData: (args) =>
+        publicClient.verifyTypedData(
+          args as unknown as Parameters<typeof publicClient.verifyTypedData>[0],
+        ),
       writeContract: (args) => walletClient.writeContract(args),
       sendTransaction: (args) => walletClient.sendTransaction(args),
       waitForTransactionReceipt: (args) =>
@@ -161,5 +169,11 @@ export function createArcFacilitator(privateKey) {
     }),
   });
 
-  return facilitator;
+  return {
+    verify: (paymentPayload, paymentRequirements) =>
+      facilitator.verify(paymentPayload, paymentRequirements),
+    settle: (paymentPayload, paymentRequirements) =>
+      facilitator.settle(paymentPayload, paymentRequirements),
+    getSupported: async () => facilitator.getSupported() as SupportedResponse,
+  };
 }

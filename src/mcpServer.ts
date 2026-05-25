@@ -8,16 +8,42 @@ import {
   getClientPrivateKey,
 } from "./arc.js";
 
+type ArcPaymentClient = ReturnType<typeof createArcPaymentClient>;
+
+interface PaidCaptureResult {
+  title?: string;
+  url?: string;
+  capturedAt?: string;
+  captureTimeMs?: number;
+  payment?: {
+    price?: string;
+    network?: string;
+  };
+  refund?: {
+    amount?: string;
+    reason?: string;
+    transaction?: string;
+  };
+  content?: string;
+}
+
 const EVM_PRIVATE_KEY = getClientPrivateKey();
 const SERVER_URL =
   process.env.EYEZ_URL ||
   "http://localhost:3001";
 
 // Setup x402 payment client
-let httpClient = null;
-let client = null;
+let httpClient: ArcPaymentClient["httpClient"] | null = null;
+let client: ArcPaymentClient["client"] | null = null;
 
-function getPaymentClient() {
+function getErrorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
+}
+
+function getPaymentClient(): {
+  client: ArcPaymentClient["client"] | null;
+  httpClient: ArcPaymentClient["httpClient"] | null;
+} {
   if (!client && EVM_PRIVATE_KEY) {
     const paymentClient = createArcPaymentClient(EVM_PRIVATE_KEY);
     client = paymentClient.client;
@@ -26,9 +52,9 @@ function getPaymentClient() {
   return { client, httpClient };
 }
 
-async function paidCapture(url) {
+async function paidCapture(url: string): Promise<PaidCaptureResult> {
   const { client, httpClient } = getPaymentClient();
-  if (!client) {
+  if (!client || !httpClient) {
     throw new Error("EVM_PRIVATE_KEY or ARC_PRIVATE_KEY not set - cannot make x402 payments");
   }
 
@@ -37,7 +63,7 @@ async function paidCapture(url) {
   // Step 1: Get 402 response
   const firstTry = await fetch(captureEndpoint);
   if (firstTry.status !== 402) {
-    return await firstTry.json();
+    return (await firstTry.json()) as PaidCaptureResult;
   }
 
   // Step 2: Create payment
@@ -56,7 +82,7 @@ async function paidCapture(url) {
     throw new Error(`Capture failed (${resp.status}): ${text}`);
   }
 
-  return await resp.json();
+  return (await resp.json()) as PaidCaptureResult;
 }
 
 // Create MCP server
@@ -84,7 +110,7 @@ server.tool(
       };
     } catch (err) {
       return {
-        content: [{ type: "text", text: `Error: ${err.message}` }],
+        content: [{ type: "text", text: `Error: ${getErrorMessage(err)}` }],
         isError: true,
       };
     }

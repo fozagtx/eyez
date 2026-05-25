@@ -2,7 +2,7 @@
   "mcpServers": {
     "eyez": {
       "command": "node",
-      "args": ["/absolute/path/to/eyez/src/mcpServer.js"],
+      "args": ["/absolute/path/to/eyez/dist/mcpServer.js"],
       "env": {
         "EYEZ_URL": "http://localhost:3001",
         "EVM_PRIVATE_KEY": "0x0000000000000000000000000000000000000000000000000000000000000000"

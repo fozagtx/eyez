@@ -13,17 +13,17 @@ ENV PNPM_HOME=/pnpm
 ENV PATH="$PNPM_HOME:$PATH"
 
 RUN corepack enable
-COPY package.json pnpm-lock.yaml ./
-RUN pnpm install --prod --frozen-lockfile
+COPY package.json pnpm-lock.yaml tsconfig.json ./
+RUN pnpm install --frozen-lockfile
+COPY --chown=node:node src ./src
+RUN pnpm build && pnpm prune --prod
 
 # Install Playwright Chromium as node user (matches runtime user)
 USER node
 RUN pnpm exec playwright install chromium
 
-COPY --chown=node:node src ./src
-
 ENV PORT=7860
 
 EXPOSE 7860
 
-CMD ["node", "src/server.js"]
+CMD ["node", "dist/server.js"]
