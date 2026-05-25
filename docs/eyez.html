@@ -980,7 +980,7 @@ body.editActive [contenteditable="true"]:focus {
         <div class="terminalWindow">
             <div class="promptLine reveal">
                 <span class="prompt">$</span>&nbsp;
-                <span>curl <span class="flag">-X GET</span> <span class="str">"eyez.app/capture?url=..."</span></span>
+                <span>connect <span class="flag">MCP</span> <span class="str">"https://pima5-eyez.hf.space/mcp"</span></span>
             </div>
             <div class="promptLine reveal">
                 <span class="prompt">&larr;</span>&nbsp;
@@ -1081,31 +1081,31 @@ body.editActive [contenteditable="true"]:focus {
             <div class="flowStep reveal">
                 <span class="stepNum req">1</span>
                 <div>
-                    Agent requests <span class="codeInline">GET /capture?url=<span class="str">target</span></span><br>
-                    <span class="comment">// Any public URL — social, DeFi, analytics, news</span>
+                    Agent connects to <span class="codeInline">https://pima5-eyez.hf.space/mcp</span><br>
+                    <span class="comment">// MCP discovers the capturePage tool</span>
                 </div>
             </div>
 
             <div class="flowStep reveal">
                 <span class="stepNum pay">2</span>
                 <div>
-                    Server returns <span class="value">402 Payment Required</span><br>
-                    <span class="comment">// Includes Arc payment details via x402 header</span>
+                    Agent calls <span class="value">capturePage</span> with a URL<br>
+                    <span class="comment">// Any public URL — social, DeFi, analytics, news</span>
                 </div>
             </div>
 
             <div class="flowStep reveal">
                 <span class="stepNum sign">3</span>
                 <div>
-                    Agent signs <span class="codeInline"><span class="value">$0.001</span> USDC</span> on Arc Testnet<br>
-                    <span class="comment">// x402.org facilitator verifies — ~5s settlement</span>
+                    eyez settles <span class="codeInline"><span class="value">$0.001</span> USDC</span> through x402<br>
+                    <span class="comment">// Arc Testnet payment uses the Space wallet</span>
                 </div>
             </div>
 
             <div class="flowStep reveal">
                 <span class="stepNum capture">4</span>
                 <div>
-                    Playwright captures page with <span class="keyword">smart waiting</span><br>
+                    Browser captures page with <span class="keyword">smart waiting</span><br>
                     <span class="comment">// Lazy-load handling, dynamic scroll, SPA hydration</span>
                 </div>
             </div>
@@ -1113,8 +1113,8 @@ body.editActive [contenteditable="true"]:focus {
             <div class="flowStep reveal">
                 <span class="stepNum json">5</span>
                 <div>
-                    Returns structured JSON: title, headings, links, content<br>
-                    <span class="comment">// Blocked page? Auto-refund on-chain. Zero risk.</span>
+                    Returns structured text to the agent<br>
+                    <span class="comment">// Title, headings, links, content, timing, payment metadata</span>
                 </div>
             </div>
         </div>
@@ -1203,22 +1203,17 @@ body.editActive [contenteditable="true"]:focus {
 
             <div class="codeBlock reveal">
                 <div class="codeLabel"><span class="prompt">&#x25CF;</span> Option 1: MCP Tool</div>
-                <span class="comment">// .mcp.json — transparent payment handling</span><br>
-                {<br>
-                &nbsp;&nbsp;<span class="str">"mcpServers"</span>: {<br>
-                &nbsp;&nbsp;&nbsp;&nbsp;<span class="str">"eyez"</span>: {<br>
-                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="str">"command"</span>: <span class="str">"node"</span>,<br>
-                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="str">"args"</span>: [<span class="str">"dist/mcpServer.js"</span>]<br>
-                &nbsp;&nbsp;&nbsp;&nbsp;}<br>
-                &nbsp;&nbsp;}<br>
-                }
+                <span class="comment">// Hosted MCP endpoint</span><br>
+                <span class="str">https://pima5-eyez.hf.space/mcp</span><br>
+                <br>
+                <span class="comment">// Agent calls the tool</span><br>
+                <span class="value">capturePage</span>({ url: <span class="str">"https://example.com"</span> })
             </div>
 
             <div class="codeBlock reveal">
                 <div class="codeLabel"><span class="flag">&#x25CF;</span> Option 2: x402 Fetch (Node.js)</div>
-                <span class="keyword">import</span> { wrapFetch } <span class="keyword">from</span> <span class="str">"@x402/fetch"</span>;<br>
-                <span class="keyword">const</span> res = <span class="keyword">await</span> fetch402(<br>
-                &nbsp;&nbsp;<span class="str">`eyez.app/capture?url=${url}`</span><br>
+                <span class="keyword">const</span> result = <span class="keyword">await</span> agent.callTool(<br>
+                &nbsp;&nbsp;<span class="str">"capturePage"</span>, { url }<br>
                 );
             </div>
 

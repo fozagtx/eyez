@@ -569,7 +569,7 @@
                     </div>
                     <div class="metric">
                         <strong>capturePage</strong>
-                        <span>MCP tool exposed over stdio</span>
+                        <span>MCP tool at /mcp</span>
                     </div>
                 </div>
                 <div class="btn-row">
@@ -583,8 +583,9 @@
                 <section id="integration" class="section">
                     <h2>Integrations</h2>
                     <p class="muted">
-                        Run the eyez server locally or on a host, then register
-                        the MCP wrapper in your MCP-aware client.
+                        Connect an MCP-aware agent to the hosted endpoint. The
+                        agent discovers <code>capturePage</code> and calls it
+                        when normal fetch cannot see page content.
                     </p>
 
                     <details open>
@@ -616,49 +617,36 @@
                         </div>
                     </details>
 
-                    <h3>Server environment</h3>
+                    <h3>Hosted MCP endpoint</h3>
                     <div class="code" data-copy>
                         <div class="bar">
                             <span class="dot"></span><span class="dot"></span
                             ><span class="dot"></span>
                         </div>
-                        <pre><code class="language-bash">PORT=3001
-PAY_TO=0xYourReceivingAddress
-FACILITATOR_PRIVATE_KEY=0xYourServerPrivateKey
-EVM_PRIVATE_KEY=0xYourClientPrivateKey
-
-# Optional
-ARC_RPC_URL=https://rpc.testnet.arc.network
-PRICE_USDC=0.001
-REFUND_AMOUNT_USDC=0.001</code></pre>
+                        <pre><code class="language-text">https://pima5-eyez.hf.space/mcp</code></pre>
                         <button class="copy" title="Copy">Copy</button>
                     </div>
 
-                    <h3>MCP host config</h3>
+                    <h3>Agent tool call</h3>
                     <div class="code" data-copy>
                         <div class="bar">
                             <span class="dot"></span><span class="dot"></span
                             ><span class="dot"></span>
                         </div>
                         <pre><code class="language-json">{
-  "mcpServers": {
-    "eyez": {
-      "command": "node",
-      "args": ["/path/to/eyez/dist/mcpServer.js"],
-      "env": {
-        "EVM_PRIVATE_KEY": "0xYOUR_CLIENT_PRIVATE_KEY",
-        "EYEZ_URL": "http://localhost:3001"
-      }
-    }
+  "tool": "capturePage",
+  "arguments": {
+    "url": "https://example.com"
   }
 }</code></pre>
                         <button class="copy" title="Copy">Copy</button>
                     </div>
 
                     <div class="callout">
-                        Start the API with <code>pnpm start</code>. In a separate
-                        shell, test a paid capture with
-                        <code>pnpm demo -- https://example.com</code>.
+                        Flow: user asks for a page, agent calls
+                        <code>capturePage</code>, eyez pays through x402 on Arc,
+                        captures the browser page, and returns title, headings,
+                        links, and extracted text.
                     </div>
                 </section>
 
