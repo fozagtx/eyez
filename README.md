@@ -1,3 +1,12 @@
+---
+title: eyez
+emoji: 👁️
+colorFrom: blue
+colorTo: purple
+sdk: docker
+app_port: 7860
+---
+
 <div align="center">
   <img src="./docs/images/arcIcon.svg" alt="Arc Logo" width="200"/>
 </div>
@@ -92,6 +101,12 @@ Generated files are saved in `docs/demoOutput/`.
 ```
 
 The MCP tool is `capturePage`.
+
+When deployed as a Hugging Face Space, the remote MCP endpoint is:
+
+```text
+https://fozagtx-eyez.hf.space/mcp
+```
 
 ### Testing
 
@@ -226,6 +241,35 @@ docker run --rm -p 7860:7860 --env-file .env -e PORT=7860 eyez
 ---
 
 ## Deployment
+
+### Hugging Face Spaces
+
+This repository is ready for a Docker Space. The README metadata sets:
+
+```yaml
+sdk: docker
+app_port: 7860
+```
+
+Set these Space secrets before starting the app:
+
+- `PAY_TO`
+- `FACILITATOR_PRIVATE_KEY`
+- `EVM_PRIVATE_KEY`
+
+Optional Space secrets:
+
+- `ARC_RPC_URL`
+- `RPC`
+- `REFUND_PRIVATE_KEY`
+- `PRICE_USDC`
+- `REFUND_AMOUNT_USDC`
+
+After the Space builds, test:
+
+```bash
+curl https://fozagtx-eyez.hf.space/health
+```
 
 ### MCP Server
 

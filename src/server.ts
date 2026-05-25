@@ -1,6 +1,8 @@
 import "dotenv/config";
 import express from "express";
 import type { NextFunction, Request, Response } from "express";
+import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
+import type { Transport } from "@modelcontextprotocol/sdk/shared/transport.js";
 import { paymentMiddlewareFromConfig } from "@x402/express";
 import { ExactEvmScheme } from "@x402/evm/exact/server";
 import type { Address } from "viem";
@@ -14,6 +16,7 @@ import {
   getFacilitatorPrivateKey,
 } from "./arc.js";
 import { captureUrl, closeBrowser } from "./captureEngine.js";
+import { createEyezMcpServer } from "./mcpTools.js";
 import { isFailedCapture, sendRefund } from "./refund.js";
 
 type DecodedUrlRequest = Request & { decodedUrl?: string };
@@ -91,11 +94,39 @@ app.get("/", (_: Request, res: Response) =>
     price: PRICE,
     network: NETWORK,
     usage: "GET /capture?url=<encoded_url>",
+    mcp: "POST /mcp",
   }),
 );
 
 // Health check (free)
 app.get("/health", (_: Request, res: Response) => res.json({ status: "ok" }));
+
+app.use("/mcp", express.json({ limit: "1mb" }));
+app.all("/mcp", async (req: Request, res: Response) => {
+  const mcpServer = createEyezMcpServer();
+  const transport = new StreamableHTTPServerTransport({
+    sessionIdGenerator: undefined,
+  } as unknown as ConstructorParameters<typeof StreamableHTTPServerTransport>[0]);
+
+  res.on("close", () => {
+    void transport.close();
+  });
+
+  try {
+    await mcpServer.connect(transport as unknown as Transport);
+    await transport.handleRequest(req, res, req.body);
+  } catch (err) {
+    const message = getErrorMessage(err);
+    console.error("MCP request failed:", message);
+    if (!res.headersSent) {
+      res.status(500).json({
+        jsonrpc: "2.0",
+        error: { code: -32603, message: "Internal server error" },
+        id: null,
+      });
+    }
+  }
+});
 
 // URL validation runs before payment to reject SSRF attempts early.
 app.use("/capture", (req: Request, res: Response, next: NextFunction) => {
