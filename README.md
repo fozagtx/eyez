@@ -1,12 +1,3 @@
----
-title: eyez
-emoji: 👁️
-colorFrom: blue
-colorTo: purple
-sdk: docker
-app_port: 7860
----
-
 <div align="center">
   <img src="./docs/images/arcIcon.svg" alt="Arc Logo" width="200"/>
 </div>
@@ -15,7 +6,64 @@ app_port: 7860
 
 Pay per capture Model Context Protocol (MCP) server that enables AI agents to capture JavaScript-heavy webpages through x402 payments on Arc Testnet USDC.
 
-## Features
+## Space Config
+
+| Field | Value |
+| --- | --- |
+| title | `eyez` |
+| emoji | `👁️` |
+| colorFrom | `blue` |
+| colorTo | `purple` |
+| sdk | `docker` |
+| app_port | `7860` |
+
+## How Agents Use eyez
+
+The hosted MCP endpoint is:
+
+```text
+https://pima5-eyez.hf.space/mcp
+```
+
+An MCP-capable agent connects to that endpoint, discovers the `capturePage` tool, and calls it whenever normal HTTP fetch is not enough.
+
+```json
+{
+  "tool": "capturePage",
+  "arguments": {
+    "url": "https://example.com"
+  }
+}
+```
+
+The flow is:
+
+1. The user asks the agent to inspect a public webpage.
+2. The agent calls `capturePage` with the page URL.
+3. eyez requests the paid `/capture` endpoint.
+4. x402 payment is created and settled on Arc Testnet USDC.
+5. eyez opens the page in a browser, waits for JavaScript content, extracts structured text, and returns it to the agent.
+6. The agent uses the returned title, headings, links, and content in its answer or workflow.
+
+Returned content looks like:
+
+```json
+{
+  "title": "Example Domain",
+  "url": "https://example.com",
+  "capturedAt": "2026-05-25T12:00:00.000Z",
+  "captureTimeMs": 3325,
+  "payment": {
+    "price": "$0.001",
+    "network": "eip155:5042002"
+  },
+  "content": "Example Domain..."
+}
+```
+
+For the public Hugging Face Space, payments use the wallet configured in the Space secrets. For production use, add auth or per-user payment keys before opening access broadly.
+
+## What It Provides
 
 - JavaScript-heavy webpage capture
 - Paid browser captures through x402
@@ -25,95 +73,6 @@ Pay per capture Model Context Protocol (MCP) server that enables AI agents to ca
 - Automatic refund attempts for failed captures
 - Demo scripts for capture testing and log generation
 - Docker deployment support
-
----
-
-## Quick Start
-
-### Prerequisites
-
-- Node.js 22+
-- pnpm 10+
-- Arc Testnet wallet with USDC
-- Payment receiver address for `PAY_TO`
-
-### Installation
-
-#### Manual Installation
-
-```bash
-# Install dependencies
-pnpm install
-
-# Create an environment file
-cp .env.example .env
-```
-
----
-
-## Usage
-
-### Development Mode
-
-```bash
-# Compile TypeScript
-pnpm build
-
-# Start the API server
-pnpm start
-```
-
-The server defaults to:
-
-```bash
-http://localhost:3001
-```
-
-### Demo Capture
-
-```bash
-pnpm demo -- https://example.com
-```
-
-### Save Demo Logs
-
-```bash
-SERVER_URL=http://localhost:3001 pnpm demo:logs -- https://x.com/circle
-```
-
-Generated files are saved in `docs/demoOutput/`.
-
-### MCP Configuration
-
-```json
-{
-  "mcpServers": {
-    "eyez": {
-      "command": "node",
-      "args": ["/absolute/path/to/eyez/dist/mcpServer.js"],
-      "env": {
-        "EVM_PRIVATE_KEY": "0x...",
-        "EYEZ_URL": "http://localhost:3001"
-      }
-    }
-  }
-}
-```
-
-The MCP tool is `capturePage`.
-
-When deployed as a Hugging Face Space, the remote MCP endpoint is:
-
-```text
-https://pima5-eyez.hf.space/mcp
-```
-
-### Testing
-
-```bash
-pnpm verify
-pnpm demo -- https://example.com
-```
 
 ---
 
@@ -244,7 +203,7 @@ docker run --rm -p 7860:7860 --env-file .env -e PORT=7860 eyez
 
 ### Hugging Face Spaces
 
-This repository is ready for a Docker Space. The README metadata sets:
+This repository is ready for a Docker Space. The active Space uses:
 
 ```yaml
 sdk: docker
