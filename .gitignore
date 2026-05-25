@@ -1,5 +1,6 @@
 node_modules/
 .env
+.serena/
 test_*.py
 bench_*.py
 __pycache__/

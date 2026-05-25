@@ -2,11 +2,14 @@
   "name": "eyez",
   "version": "1.0.0",
   "description": "Pay per capture headless browser API powered by x402 micropayments on Arc",
-  "main": "server.js",
+  "main": "src/server.js",
+  "packageManager": "pnpm@10.24.0",
   "scripts": {
-    "start": "node server.js",
-    "demo": "node demoClient.js",
-    "demo:logs": "node saveDemo.js"
+    "start": "node src/server.js",
+    "mcp": "node src/mcpServer.js",
+    "demo": "node src/demoClient.js",
+    "demo:logs": "node src/saveDemo.js",
+    "derive:address": "node deriveArcAddress.cjs"
   },
   "keywords": [
     "x402",
@@ -16,7 +19,7 @@
     "headlessBrowser",
     "micropayments"
   ],
-  "author": "tantk",
+  "author": "fozagtx",
   "license": "MIT",
   "type": "module",
   "dependencies": {

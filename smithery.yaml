@@ -1,0 +1,25 @@
+runtime: container
+build:
+  dockerfile: Dockerfile
+startCommand:
+  type: stdio
+  command: node
+  args:
+    - src/mcpServer.js
+  configSchema:
+    type: object
+    properties:
+      eyezUrl:
+        type: string
+        title: eyez URL
+        default: http://localhost:3001
+        description: HTTP URL for the running eyez capture API.
+      evmPrivateKey:
+        type: string
+        title: EVM private key
+        description: Arc-compatible private key used to pay x402 requests.
+    required:
+      - evmPrivateKey
+  env:
+    EYEZ_URL: "{{eyezUrl}}"
+    EVM_PRIVATE_KEY: "{{evmPrivateKey}}"

@@ -1,0 +1,818 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <title>eyez - Arc USDC x402 Browser Capture</title>
+        <meta
+            name="description"
+            content="Documentation for eyez, a pay-per-capture headless browser API and MCP tool powered by x402 micropayments on Arc Testnet USDC."
+        />
+        <link rel="icon" href="favicon.ico" />
+        <style>
+            :root {
+                --bg: #070908;
+                --panel: #101410;
+                --panel-strong: #151b16;
+                --muted: #96a19a;
+                --text: #edf4ee;
+                --brand: #b7ff4f;
+                --brand-2: #2775ca;
+                --warn: #ffce5c;
+                --ring: 0 0 0 3px rgba(183, 255, 79, 0.28);
+                --radius: 12px;
+                --code-bg: #080b0e;
+                --border: #222c25;
+                --shadow: 0 18px 44px rgba(0, 0, 0, 0.34);
+            }
+
+            @media (prefers-color-scheme: light) {
+                :root {
+                    --bg: #f6f8f4;
+                    --panel: #ffffff;
+                    --panel-strong: #eef4ee;
+                    --text: #111810;
+                    --muted: #57645c;
+                    --border: #dde8df;
+                    --code-bg: #091018;
+                }
+
+                .code pre {
+                    background: #091018;
+                    color: #e6f4ff;
+                }
+
+                .brand-lockup img {
+                    filter: invert(1);
+                }
+            }
+
+            * {
+                box-sizing: border-box;
+            }
+
+            html,
+            body {
+                min-height: 100%;
+                overflow-x: hidden;
+            }
+
+            body {
+                margin: 0;
+                font:
+                    16px/1.5 ui-sans-serif,
+                    -apple-system,
+                    "Segoe UI",
+                    Roboto,
+                    system-ui,
+                    Arial;
+                color: var(--text);
+                background:
+                    linear-gradient(140deg, rgba(183, 255, 79, 0.08), transparent 30%),
+                    linear-gradient(310deg, rgba(39, 117, 202, 0.12), transparent 34%),
+                    var(--bg);
+                -webkit-font-smoothing: antialiased;
+                -moz-osx-font-smoothing: grayscale;
+            }
+
+            a {
+                color: var(--brand);
+                text-decoration: underline;
+                text-underline-offset: 3px;
+            }
+
+            a:hover {
+                color: #d9ff8d;
+            }
+
+            .container {
+                max-width: 1100px;
+                margin: 0 auto;
+                padding: 24px;
+            }
+
+            header.nav {
+                position: sticky;
+                top: 0;
+                z-index: 50;
+                backdrop-filter: saturate(120%) blur(10px);
+                background: color-mix(in oklab, var(--bg), transparent 24%);
+                border-bottom: 1px solid var(--border);
+            }
+
+            .nav-inner {
+                display: flex;
+                align-items: center;
+                gap: 16px;
+                padding: 14px 24px;
+            }
+
+            .brand {
+                display: flex;
+                align-items: center;
+                gap: 12px;
+                font-weight: 800;
+            }
+
+            .logo-pair {
+                display: flex;
+                align-items: center;
+                isolation: isolate;
+            }
+
+            .logo-tile {
+                width: 46px;
+                height: 46px;
+                display: grid;
+                place-items: center;
+                border-radius: 10px;
+                border: 1px solid var(--border);
+                background: var(--panel-strong);
+                box-shadow: var(--shadow);
+            }
+
+            .logo-tile + .logo-tile {
+                margin-left: -10px;
+                background: #2775ca;
+            }
+
+            .logo-tile img {
+                width: 26px;
+                max-height: 26px;
+                display: block;
+            }
+
+            .logo-tile.usdc img {
+                width: 34px;
+            }
+
+            .brand-lockup {
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                min-width: 0;
+            }
+
+            .brand-word {
+                white-space: nowrap;
+            }
+
+            .tabs {
+                margin-left: auto;
+                display: flex;
+                gap: 6px;
+                background: var(--panel);
+                padding: 6px;
+                border-radius: 999px;
+                border: 1px solid var(--border);
+            }
+
+            .tab {
+                border: 0;
+                padding: 8px 14px;
+                border-radius: 999px;
+                color: var(--muted);
+                background: transparent;
+                cursor: pointer;
+                font-weight: 700;
+            }
+
+            .tab.active {
+                color: #08100c;
+                background: linear-gradient(135deg, var(--brand), #68f0ff);
+                box-shadow: var(--shadow);
+            }
+
+            .github-link {
+                display: inline-flex;
+                align-items: center;
+                gap: 8px;
+                color: var(--text);
+                text-decoration: none;
+                padding: 8px 14px;
+                border-radius: 8px;
+                border: 1px solid var(--border);
+                background: var(--panel);
+                font-weight: 700;
+                transition:
+                    border-color 0.2s,
+                    background 0.2s;
+            }
+
+            .github-link:hover {
+                color: var(--text);
+                border-color: var(--brand);
+                background: color-mix(in oklab, var(--panel), var(--brand) 9%);
+            }
+
+            .hero {
+                padding: 44px 0 18px;
+            }
+
+            .hero h1 {
+                font-size: clamp(30px, 5vw, 54px);
+                line-height: 1.04;
+                margin: 10px 0 8px;
+            }
+
+            .tagline {
+                color: var(--muted);
+                max-width: 68ch;
+                font-size: 1.05rem;
+            }
+
+            .pill {
+                border: 1px solid var(--border);
+                padding: 7px 11px;
+                border-radius: 999px;
+                background: color-mix(in oklab, var(--panel), transparent 12%);
+                display: inline-flex;
+                align-items: center;
+                gap: 8px;
+                font-weight: 700;
+                max-width: 100%;
+            }
+
+            .pill img {
+                height: 18px;
+                width: auto;
+            }
+
+            .hero-metrics {
+                display: grid;
+                grid-template-columns: repeat(3, minmax(0, 1fr));
+                gap: 12px;
+                margin-top: 22px;
+                max-width: 760px;
+            }
+
+            .metric {
+                border: 1px solid var(--border);
+                border-radius: 10px;
+                padding: 14px;
+                background: color-mix(in oklab, var(--panel), transparent 8%);
+            }
+
+            .metric strong {
+                display: block;
+                font-size: 1.1rem;
+            }
+
+            .metric span {
+                color: var(--muted);
+                font-size: 0.9rem;
+            }
+
+            .section {
+                margin: 28px 0;
+            }
+
+            .section h2 {
+                margin: 0 0 8px;
+                font-size: clamp(23px, 3vw, 32px);
+            }
+
+            .section h3 {
+                margin: 20px 0 8px;
+            }
+
+            .muted {
+                color: var(--muted);
+            }
+
+            .code {
+                position: relative;
+                border: 1px solid var(--border);
+                border-radius: var(--radius);
+                overflow: hidden;
+                background: var(--panel);
+                margin-top: 12px;
+            }
+
+            .code .bar {
+                display: flex;
+                gap: 8px;
+                padding: 10px 12px;
+                align-items: center;
+                background: color-mix(in oklab, var(--panel), white 3%);
+                border-bottom: 1px solid var(--border);
+            }
+
+            .dot {
+                width: 10px;
+                height: 10px;
+                border-radius: 999px;
+                background: #ff5f57;
+            }
+
+            .dot:nth-child(2) {
+                background: #ffbd2e;
+            }
+
+            .dot:nth-child(3) {
+                background: #28c840;
+            }
+
+            pre {
+                margin: 0;
+                padding: 16px;
+                overflow: auto;
+                font:
+                    13px/1.6 ui-monospace,
+                    SFMono-Regular,
+                    Menlo,
+                    Monaco,
+                    Consolas,
+                    "Liberation Mono",
+                    monospace;
+                background: var(--code-bg);
+                color: #d6e9ff;
+            }
+
+            code {
+                font-family:
+                    ui-monospace,
+                    SFMono-Regular,
+                    Menlo,
+                    Monaco,
+                    Consolas,
+                    "Liberation Mono",
+                    monospace;
+            }
+
+            p code,
+            li code,
+            td code {
+                background: color-mix(in oklab, var(--panel-strong), white 5%);
+                border: 1px solid var(--border);
+                padding: 2px 6px;
+                border-radius: 6px;
+                color: var(--text);
+                font-size: 0.92em;
+            }
+
+            .copy {
+                position: absolute;
+                top: 8px;
+                right: 8px;
+                border: 1px solid var(--border);
+                background: color-mix(in oklab, var(--panel), transparent 10%);
+                color: var(--muted);
+                padding: 6px 10px;
+                border-radius: 10px;
+                cursor: pointer;
+                font-weight: 700;
+            }
+
+            .copy:focus {
+                outline: none;
+                box-shadow: var(--ring);
+            }
+
+            .btn-row {
+                display: flex;
+                gap: 10px;
+                flex-wrap: wrap;
+                margin-top: 18px;
+            }
+
+            .btn {
+                appearance: none;
+                border: 0;
+                padding: 10px 14px;
+                border-radius: 10px;
+                background: linear-gradient(135deg, var(--brand), #68f0ff);
+                color: #08100c;
+                font-weight: 800;
+                cursor: pointer;
+                text-decoration: none;
+            }
+
+            .btn.secondary {
+                background: color-mix(in oklab, var(--panel), transparent 10%);
+                color: var(--text);
+                border: 1px solid var(--border);
+            }
+
+            details {
+                border: 1px solid var(--border);
+                border-radius: var(--radius);
+                padding: 13px 14px;
+                background: color-mix(in oklab, var(--panel), transparent 5%);
+                margin: 16px 0;
+            }
+
+            summary {
+                cursor: pointer;
+                font-weight: 800;
+                color: var(--brand);
+            }
+
+            table {
+                width: 100%;
+                border-collapse: collapse;
+                overflow: hidden;
+                border: 1px solid var(--border);
+                border-radius: var(--radius);
+                background: color-mix(in oklab, var(--panel), transparent 5%);
+            }
+
+            th,
+            td {
+                padding: 12px 14px;
+                border-bottom: 1px solid var(--border);
+                text-align: left;
+                vertical-align: top;
+            }
+
+            tr:last-child td {
+                border-bottom: 0;
+            }
+
+            th {
+                color: var(--muted);
+                width: 34%;
+                font-size: 0.92rem;
+            }
+
+            .tool-list {
+                margin: 8px 0 0 20px;
+                padding: 0;
+            }
+
+            .tool-list li {
+                margin: 8px 0;
+            }
+
+            .callout {
+                margin-top: 16px;
+                padding: 13px 14px;
+                border-left: 3px solid var(--brand);
+                background: color-mix(in oklab, var(--panel), transparent 12%);
+            }
+
+            footer {
+                text-align: center;
+                padding: 40px 24px;
+                color: var(--muted);
+                border-top: 1px solid var(--border);
+            }
+
+            @media (max-width: 820px) {
+                .nav-inner {
+                    flex-wrap: wrap;
+                }
+
+                .tabs {
+                    margin-left: 0;
+                }
+
+                .hero-metrics {
+                    grid-template-columns: 1fr;
+                }
+            }
+
+            @media (max-width: 560px) {
+                .container {
+                    padding: 18px;
+                }
+
+                .nav-inner {
+                    gap: 12px;
+                }
+
+                .pill {
+                    border-radius: 16px;
+                    flex-wrap: wrap;
+                    line-height: 1.25;
+                }
+
+                .github-link {
+                    width: 100%;
+                    justify-content: center;
+                }
+            }
+        </style>
+    </head>
+
+    <body>
+        <header class="nav">
+            <div class="nav-inner container">
+                <div class="brand">
+                    <div class="logo-pair" aria-hidden="true">
+                        <span class="logo-tile">
+                            <img src="./images/arcIcon.svg" alt="" />
+                        </span>
+                        <span class="logo-tile usdc">
+                            <img src="./images/usdcLogo.svg" alt="" />
+                        </span>
+                    </div>
+                    <div class="brand-lockup">
+                        <span class="brand-word">eyez docs</span>
+                    </div>
+                </div>
+
+                <nav class="tabs" role="tablist" aria-label="Primary">
+                    <button
+                        class="tab active"
+                        data-tab="docs"
+                        role="tab"
+                        aria-selected="true"
+                    >
+                        Docs
+                    </button>
+                </nav>
+
+                <a
+                    class="github-link"
+                    href="https://github.com/fozagtx/eyez"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                >
+                    <svg
+                        width="20"
+                        height="20"
+                        viewBox="0 0 16 16"
+                        fill="currentColor"
+                        aria-hidden="true"
+                    >
+                        <path
+                            d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"
+                        />
+                    </svg>
+                    GitHub
+                </a>
+            </div>
+        </header>
+
+        <main class="container">
+            <section class="hero">
+                <p class="pill">
+                    <img src="./images/arcIcon.svg" alt="" />
+                    MCP + x402
+                    <span class="muted">on Arc Testnet USDC</span>
+                </p>
+                <h1>eyez</h1>
+                <p class="tagline">
+                    A pay-per-capture headless browser API for agents. Pay
+                    0.001 USDC on Arc Testnet through x402 and receive
+                    structured page content from JavaScript-heavy sites.
+                </p>
+                <div class="hero-metrics" aria-label="Service summary">
+                    <div class="metric">
+                        <strong>$0.001 USDC</strong>
+                        <span>per successful capture request</span>
+                    </div>
+                    <div class="metric">
+                        <strong>eip155:5042002</strong>
+                        <span>Arc Testnet x402 network</span>
+                    </div>
+                    <div class="metric">
+                        <strong>capturePage</strong>
+                        <span>MCP tool exposed over stdio</span>
+                    </div>
+                </div>
+                <div class="btn-row">
+                    <a class="btn" href="#integration">Configure MCP</a>
+                    <a class="btn secondary" href="#api">View API</a>
+                    <a class="btn secondary" href="#network">Network</a>
+                </div>
+            </section>
+
+            <div id="tab-docs" role="tabpanel">
+                <section id="integration" class="section">
+                    <h2>Integrations</h2>
+                    <p class="muted">
+                        Run the eyez server locally or on a host, then register
+                        the MCP wrapper in your MCP-aware client.
+                    </p>
+
+                    <details open>
+                        <summary>Wallet configuration required</summary>
+                        <div>
+                            <p>
+                                The server and client both need EVM keys because
+                                x402 payments are settled on Arc Testnet.
+                            </p>
+                            <ul>
+                                <li>
+                                    Server: set <code>PAY_TO</code> to the
+                                    address receiving payments.
+                                </li>
+                                <li>
+                                    Server: set
+                                    <code>FACILITATOR_PRIVATE_KEY</code> for
+                                    x402 settlement and optional refunds.
+                                </li>
+                                <li>
+                                    Client/MCP: set <code>EVM_PRIVATE_KEY</code>
+                                    so the MCP tool can pay for captures.
+                                </li>
+                            </ul>
+                            <p class="muted">
+                                Use a funded test wallet for development. Never
+                                commit private keys.
+                            </p>
+                        </div>
+                    </details>
+
+                    <h3>Server environment</h3>
+                    <div class="code" data-copy>
+                        <div class="bar">
+                            <span class="dot"></span><span class="dot"></span
+                            ><span class="dot"></span>
+                        </div>
+                        <pre><code class="language-bash">PORT=3001
+PAY_TO=0xYourReceivingAddress
+FACILITATOR_PRIVATE_KEY=0xYourServerPrivateKey
+EVM_PRIVATE_KEY=0xYourClientPrivateKey
+
+# Optional
+ARC_RPC_URL=https://rpc.testnet.arc.network
+PRICE_USDC=0.001
+REFUND_AMOUNT_USDC=0.001</code></pre>
+                        <button class="copy" title="Copy">Copy</button>
+                    </div>
+
+                    <h3>MCP host config</h3>
+                    <div class="code" data-copy>
+                        <div class="bar">
+                            <span class="dot"></span><span class="dot"></span
+                            ><span class="dot"></span>
+                        </div>
+                        <pre><code class="language-json">{
+  "mcpServers": {
+    "eyez": {
+      "command": "node",
+      "args": ["/path/to/eyez/src/mcpServer.js"],
+      "env": {
+        "EVM_PRIVATE_KEY": "0xYOUR_CLIENT_PRIVATE_KEY",
+        "EYEZ_URL": "http://localhost:3001"
+      }
+    }
+  }
+}</code></pre>
+                        <button class="copy" title="Copy">Copy</button>
+                    </div>
+
+                    <div class="callout">
+                        Start the API with <code>pnpm start</code>. In a separate
+                        shell, test a paid capture with
+                        <code>pnpm demo -- https://example.com</code>.
+                    </div>
+                </section>
+
+                <section id="api" class="section">
+                    <h2>HTTP API</h2>
+                    <p class="muted">
+                        Free health and service metadata endpoints sit next to
+                        the paid browser capture endpoint.
+                    </p>
+
+                    <table>
+                        <tbody>
+                            <tr>
+                                <th><code>GET /</code></th>
+                                <td>Returns service name, price, network, and usage.</td>
+                            </tr>
+                            <tr>
+                                <th><code>GET /health</code></th>
+                                <td>Returns a free health check response.</td>
+                            </tr>
+                            <tr>
+                                <th><code>GET /capture?url=&lt;encoded_url&gt;</code></th>
+                                <td>
+                                    Paid x402 endpoint. Captures public
+                                    <code>http</code> and <code>https</code>
+                                    pages only.
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <h3>Example response</h3>
+                    <div class="code" data-copy>
+                        <div class="bar">
+                            <span class="dot"></span><span class="dot"></span
+                            ><span class="dot"></span>
+                        </div>
+                        <pre><code class="language-json">{
+  "title": "Example Domain",
+  "description": "",
+  "headings": [{ "level": "H1", "text": "Example Domain" }],
+  "links": [{ "text": "Learn more", "href": "https://www.iana.org/domains/example" }],
+  "content": "Example Domain...",
+  "url": "https://example.com",
+  "capturedAt": "2026-05-25T12:00:00.000Z",
+  "captureTimeMs": 3325,
+  "payment": { "price": "$0.001", "network": "eip155:5042002" }
+}</code></pre>
+                        <button class="copy" title="Copy">Copy</button>
+                    </div>
+                </section>
+
+                <section id="tools" class="section">
+                    <h2>Tool list</h2>
+                    <p class="muted">
+                        The MCP server exposes one paid browser-capture tool.
+                    </p>
+
+                    <ul class="tool-list">
+                        <li>
+                            <code>capturePage</code> - Capture a
+                            JavaScript-heavy webpage through the eyez API. Use
+                            this when a plain HTTP fetch cannot see useful page
+                            text from SPAs, social apps, DeFi apps, or other
+                            browser-captured surfaces.
+                        </li>
+                    </ul>
+                </section>
+
+                <section id="network" class="section">
+                    <h2>Arc + USDC network</h2>
+                    <p class="muted">
+                        Current defaults used by the service.
+                    </p>
+
+                    <table>
+                        <tbody>
+                            <tr>
+                                <th>Network</th>
+                                <td>Arc Testnet</td>
+                            </tr>
+                            <tr>
+                                <th>Chain ID</th>
+                                <td><code>5042002</code></td>
+                            </tr>
+                            <tr>
+                                <th>x402 network</th>
+                                <td><code>eip155:5042002</code></td>
+                            </tr>
+                            <tr>
+                                <th>Currency</th>
+                                <td>USDC</td>
+                            </tr>
+                            <tr>
+                                <th>USDC asset</th>
+                                <td>
+                                    <code>0x3600000000000000000000000000000000000000</code>
+                                </td>
+                            </tr>
+                            <tr>
+                                <th>Explorer</th>
+                                <td>
+                                    <a
+                                        href="https://testnet.arcscan.app"
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                    >
+                                        testnet.arcscan.app
+                                    </a>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </section>
+
+                <section class="section">
+                    <h2>Capture guardrails</h2>
+                    <p class="muted">
+                        eyez rejects malformed URLs and private network targets
+                        before payment is requested. Failed captures can trigger
+                        refund logic when the payer address is available in the
+                        x402 payment header.
+                    </p>
+                </section>
+            </div>
+        </main>
+
+        <footer>
+            <p>Built for agents that need browser-grade capture.</p>
+            <p>
+                Powered by
+                <a href="https://www.arc.io/" target="_blank" rel="noopener noreferrer">Arc</a>,
+                <a href="https://www.usdc.com/" target="_blank" rel="noopener noreferrer">USDC</a>,
+                and <code>x402</code>.
+            </p>
+        </footer>
+
+        <script>
+            document.querySelectorAll("[data-copy] .copy").forEach((btn) => {
+                btn.addEventListener("click", async () => {
+                    try {
+                        const pre = btn.parentElement.querySelector("pre");
+                        if (!pre) return;
+                        const text = pre.innerText || pre.textContent || "";
+                        await navigator.clipboard.writeText(text);
+                        const prev = btn.textContent;
+                        btn.textContent = "Copied!";
+                        setTimeout(
+                            () => (btn.textContent = prev || "Copy"),
+                            1600,
+                        );
+                    } catch {}
+                });
+            });
+        </script>
+    </body>
+</html>

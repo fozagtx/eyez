@@ -9,18 +9,21 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
+ENV PNPM_HOME=/pnpm
+ENV PATH="$PNPM_HOME:$PATH"
 
-COPY package.json package-lock.json ./
-RUN npm ci --omit=dev
+RUN corepack enable
+COPY package.json pnpm-lock.yaml ./
+RUN pnpm install --prod --frozen-lockfile
 
 # Install Playwright Chromium as node user (matches runtime user)
 USER node
-RUN npx playwright install chromium
+RUN pnpm exec playwright install chromium
 
-COPY --chown=node:node server.js captureEngine.js refund.js arc.js ./
+COPY --chown=node:node src ./src
 
 ENV PORT=7860
 
 EXPOSE 7860
 
-CMD ["node", "server.js"]
+CMD ["node", "src/server.js"]
