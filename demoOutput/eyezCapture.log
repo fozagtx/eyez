@@ -1,0 +1,134 @@
+# eyez paid capture demo
+Recorded: 2026-05-25T12:18:56.009Z
+Target: https://x.com/circle
+Endpoint: http://localhost:3999/capture?url=https%3A%2F%2Fx.com%2Fcircle
+
+Initial response: 402 Payment Required
+x402 version: 2
+Scheme: exact
+Network: eip155:5042002
+Asset: 0x3600000000000000000000000000000000000000
+Amount: 1000
+Pay to: 0xBb67c7386e1e4Fb9931129CA09FE577F4B3fFb97
+
+Creating payment payload...
+Paid response: 200 OK
+Paid elapsed: 13590ms
+Settlement success: true
+Settlement tx: 0x79b2021611df1056291c3e34c5769c9d0b1a31731bd53967b4b8308609c04052
+Settlement network: eip155:5042002
+Explorer: https://testnet.arcscan.app/tx/0x79b2021611df1056291c3e34c5769c9d0b1a31731bd53967b4b8308609c04052
+
+## Capture result
+Title: Circle (@circle) / X
+Capture time: 5963ms
+Content length: 2150 chars
+
+## Headings
+H2: Circle
+H1: Circle’s posts
+H2: New to X?
+
+## Links
+Log in -> https://x.com/login
+Sign up -> https://x.com/i/flow/signup
+https://bit.ly/3Jy6LJc -> https://t.co/7L62d1qjty
+circle.com -> https://t.co/IFWOYaB8MB
+Joined October 2013 -> https://x.com/circle/about
+462 Following -> https://x.com/circle/following
+275.8K Followers -> https://x.com/circle/verified_followers
+Posts -> https://x.com/circle
+Affiliates -> https://x.com/circle/affiliates
+Replies -> https://x.com/circle/with_replies
+
+## Content preview
+Don’t miss what’s happening
+People on X are the first to know.
+Log in
+Sign up
+Circle
+6,905 posts
+Follow
+See new posts
+Follow
+Circle
+@circle
+The full-stack platform for the internet financial system. Making the economy open to all. Disclosure: https://bit.ly/3Jy6LJc
+Remote Firstcircle.com
+Joined October 2013
+462 Following
+275.8K Followers
+Posts
+Affiliates
+Replies
+Media
+Circle’s posts
+Pinned
+Circle
+@circle
+·
+Oct 30, 2025
+Arc Public Testnet is live.
+@Arc
+is an open Layer-1 blockchain designed to serve as the Economic OS for the internet, uniting programmable money and onchain innovation with real-world economic activity. Arc is uniquely suited to be a new trusted foundation for: → Lending and
+Show more
+202
+418
+1.4K
+393K
+Circle
+@circle
+·
+May 22
+Nanopayments powered by Circle Gateway enables agents to transact in fractions of a penny. As the agentic economy develops, this supports new forms of automated, high-frequency transactions.
+15
+24
+147
+8K
+Circle
+@circle
+·
+May 22
+For banks, stablecoin pilots have proven the technology works. The next test is production. At Circle Current NYC, leaders from BlackRock, EY, and Circle discussed why banks need production-scale data to understand: → Customer adoption → Controls → Operating models → P&L
+Show more
+21
+33
+161
+9K
+Circle reposted
+Blessing Adesiji
+@bleso_a
+·
+May 22
+I gave an AI agent a wallet. It bought a phone number for 5 USDC, called me with market analysis, and settled the voice call for 0.133 USDC. The agentic economy is here.
+33
+42
+194
+24K
+Circle
+@circle
+·
+May 22
+Arc is designed as the Economic OS for the internet.
+@jerallaire
+on why the next phase of internet finance will need infrastructure built for the agentic economy.
+21
+38
+185
+8.7K
+Circle
+@circle
+·
+May 21
+The next big frontier for stablecoins is the agentic economy.
+@ddisparte
+explains why USDC is built for it: available on 34+ blockchains, connected to the global banking system, and plugged into millions of wallets.
+18
+28
+167
+10K
+New to X?
+Sign up now to get your own personalized timeline!
+Sign up with Apple
+Create account
+By signing up, you agree to the Terms of Service and Privacy Policy, including Cookie Use.

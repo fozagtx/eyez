@@ -1,0 +1,1627 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>eyez - Pay Per Capture Headless Browser API</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=Sora:wght@500;600;700;800&display=swap" rel="stylesheet" />
+<style>
+/* ===========================================
+   CSS CUSTOM PROPERTIES (CAPTURE CONSOLE THEME)
+   =========================================== */
+:root {
+    /* Colors — graphite, ivory, signal accents */
+    --bgPrimary: #0b0c09;
+    --bgSecondary: #151711;
+    --bgTertiary: #25291d;
+    --panelBg: rgba(245, 246, 230, 0.93);
+    --panelEdge: rgba(245, 246, 230, 0.24);
+    --ink: #171914;
+    --textPrimary: #f5f6e6;
+    --textSecondary: #a9ac9b;
+    --textMuted: #65695b;
+    --green: #b7ff4f;
+    --greenDim: rgba(183, 255, 79, 0.14);
+    --greenGlow: rgba(183, 255, 79, 0.42);
+    --cyan: #7cf6ff;
+    --orange: #ff8a4c;
+    --red: #ff5d5d;
+    --yellow: #ffd166;
+    --purple: #d4a8ff;
+    --stringBlue: #4dbdff;
+
+    /* Typography */
+    --fontDisplay: 'Sora', 'Avenir Next', sans-serif;
+    --fontMono: 'IBM Plex Mono', 'Fira Code', monospace;
+    --fontBody: var(--fontDisplay);
+    --titleSize: clamp(2rem, 6vw, 5rem);
+    --h2Size: clamp(1.15rem, 3vw, 2.2rem);
+    --h3Size: clamp(0.9rem, 2vw, 1.35rem);
+    --bodySize: clamp(0.68rem, 1.16vw, 0.96rem);
+    --smallSize: clamp(0.55rem, 0.85vw, 0.72rem);
+
+    /* Spacing */
+    --slidePadding: clamp(1.5rem, 4vw, 4rem);
+    --contentGap: clamp(0.5rem, 1.5vw, 1.5rem);
+    --elementGap: clamp(0.25rem, 0.8vw, 0.8rem);
+
+    /* Animation */
+    --easeOutExpo: cubic-bezier(0.16, 1, 0.3, 1);
+    --durationNormal: 0.6s;
+}
+
+/* ===========================================
+   BASE RESET
+   =========================================== */
+*, *::before, *::after {
+    margin: 0; padding: 0; box-sizing: border-box;
+}
+
+/* ===========================================
+   VIEWPORT FITTING: MANDATORY BASE STYLES
+   =========================================== */
+html, body {
+    height: 100%;
+    overflow-x: hidden;
+    font-family: var(--fontBody);
+    background: var(--bgPrimary);
+    color: var(--textPrimary);
+    font-variant-ligatures: none;
+}
+
+html {
+    scroll-snap-type: y mandatory;
+    scroll-behavior: smooth;
+}
+
+.slide {
+    width: 100vw;
+    height: 100vh;
+    height: 100dvh;
+    overflow: hidden;
+    scroll-snap-align: start;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    background:
+        linear-gradient(115deg, rgba(183, 255, 79, 0.06), transparent 28%),
+        linear-gradient(245deg, rgba(124, 246, 255, 0.08), transparent 34%),
+        linear-gradient(180deg, #10120d 0%, var(--bgPrimary) 100%);
+    isolation: isolate;
+}
+
+.slideContent {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    max-height: 100%;
+    overflow: hidden;
+    padding: var(--slidePadding);
+    z-index: 6;
+}
+
+.card, .container, .contentBox {
+    max-width: min(90vw, 1000px);
+    max-height: min(80vh, 700px);
+}
+
+.featureList, .bulletList {
+    gap: clamp(0.4rem, 1vh, 1rem);
+}
+
+.featureList li, .bulletList li {
+    font-size: var(--bodySize);
+    line-height: 1.4;
+}
+
+.grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 250px), 1fr));
+    gap: clamp(0.5rem, 1.5vw, 1rem);
+}
+
+img, .imageContainer {
+    max-width: 100%;
+    max-height: min(50vh, 400px);
+    object-fit: contain;
+}
+
+/* Short viewports */
+@media (max-height: 700px) {
+    :root {
+        --slidePadding: clamp(0.75rem, 3vw, 2rem);
+        --contentGap: clamp(0.4rem, 1.5vw, 1rem);
+        --titleSize: clamp(1.25rem, 4.5vw, 2.5rem);
+        --h2Size: clamp(1rem, 3vw, 1.75rem);
+    }
+}
+
+@media (max-height: 600px) {
+    :root {
+        --slidePadding: clamp(0.5rem, 2.5vw, 1.5rem);
+        --contentGap: clamp(0.3rem, 1vw, 0.75rem);
+        --titleSize: clamp(1.1rem, 4vw, 2rem);
+        --bodySize: clamp(0.6rem, 1vw, 0.85rem);
+    }
+    .navDots, .keyboardHint, .decorative { display: none; }
+}
+
+@media (max-height: 500px) {
+    :root {
+        --slidePadding: clamp(0.4rem, 2vw, 1rem);
+        --titleSize: clamp(1rem, 3.5vw, 1.5rem);
+        --h2Size: clamp(0.9rem, 2.5vw, 1.25rem);
+        --bodySize: clamp(0.55rem, 0.9vw, 0.75rem);
+    }
+}
+
+@media (max-width: 600px) {
+    :root {
+        --titleSize: clamp(1.25rem, 7vw, 2.5rem);
+    }
+    .grid { grid-template-columns: 1fr; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        transition-duration: 0.2s !important;
+    }
+    html { scroll-behavior: auto; }
+}
+
+/* ===========================================
+   GLOBAL CAPTURE SURFACE
+   =========================================== */
+
+.slide::before {
+    content: '';
+    position: absolute; inset: 0;
+    background:
+        linear-gradient(rgba(245, 246, 230, 0.045) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(245, 246, 230, 0.035) 1px, transparent 1px);
+    background-size: 38px 38px;
+    mask-image: linear-gradient(180deg, transparent 0%, #000 20%, #000 78%, transparent 100%);
+    pointer-events: none;
+    z-index: 1;
+}
+
+.slide::after {
+    content: '';
+    position: absolute; inset: 0;
+    background:
+        linear-gradient(90deg, rgba(183, 255, 79, 0.16) 0 2px, transparent 2px 100%),
+        repeating-linear-gradient(135deg, rgba(245, 246, 230, 0.04) 0 1px, transparent 1px 16px);
+    pointer-events: none;
+    z-index: 2;
+}
+
+/* ===========================================
+   REVEAL ANIMATIONS
+   =========================================== */
+.reveal {
+    opacity: 0;
+    transform: translateY(16px);
+    transition: opacity var(--durationNormal) var(--easeOutExpo),
+                transform var(--durationNormal) var(--easeOutExpo);
+}
+
+.slide.visible .reveal {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.slide.visible .reveal:nth-child(1) { transition-delay: 0.1s; }
+.slide.visible .reveal:nth-child(2) { transition-delay: 0.2s; }
+.slide.visible .reveal:nth-child(3) { transition-delay: 0.3s; }
+.slide.visible .reveal:nth-child(4) { transition-delay: 0.4s; }
+.slide.visible .reveal:nth-child(5) { transition-delay: 0.5s; }
+.slide.visible .reveal:nth-child(6) { transition-delay: 0.6s; }
+
+/* Type-in effect */
+@keyframes typeIn {
+    from { opacity: 0; transform: translateX(-8px); }
+    to { opacity: 1; transform: translateX(0); }
+}
+
+/* Glow-in for highlighted elements */
+@keyframes glowIn {
+    from { opacity: 0; filter: blur(4px); text-shadow: none; }
+    to { opacity: 1; filter: blur(0); text-shadow: 0 0 10px var(--greenGlow); }
+}
+
+/* Line draw */
+@keyframes drawLine {
+    from { transform: scaleX(0); opacity: 0; }
+    to { transform: scaleX(1); opacity: 0.5; }
+}
+
+/* Cursor blink */
+@keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0; }
+}
+
+/* Fade in */
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+/* ===========================================
+   SHARED ELEMENTS
+   =========================================== */
+.prompt { color: var(--green); font-weight: 700; }
+.flag { color: var(--cyan); }
+.value { color: var(--orange); }
+.str { color: var(--stringBlue); }
+.comment { color: var(--textSecondary); font-style: italic; }
+.keyword { color: var(--purple); }
+.error { color: var(--red); }
+
+.cursorBlink {
+    display: inline-block;
+    width: 8px;
+    height: clamp(0.7rem, 1.2vw, 1rem);
+    background: var(--orange);
+    margin-left: 3px;
+    animation: blink 1s step-end infinite;
+    vertical-align: text-bottom;
+}
+
+.divider {
+    height: 2px;
+    background: linear-gradient(90deg, var(--green), var(--cyan), transparent);
+    margin: var(--contentGap) 0;
+    transform-origin: left;
+}
+
+.slideNumber {
+    position: absolute;
+    top: clamp(0.8rem, 1.5vw, 1.2rem);
+    right: clamp(1rem, 2vw, 2rem);
+    font-size: var(--smallSize);
+    color: var(--green);
+    font-family: var(--fontMono);
+    letter-spacing: 0.08em;
+    background: rgba(11, 12, 9, 0.62);
+    border: 1px solid rgba(183, 255, 79, 0.28);
+    border-radius: 999px;
+    padding: 0.28rem 0.55rem;
+    z-index: 6;
+}
+
+.terminalWindow {
+    background: var(--panelBg);
+    border: 1px solid var(--panelEdge);
+    border-radius: 8px;
+    box-shadow: 0 26px 80px rgba(0, 0, 0, 0.42), inset 0 0 0 1px rgba(23, 25, 20, 0.08);
+    color: var(--ink);
+    overflow: hidden;
+    padding: clamp(2.25rem, 3.5vw, 3rem) clamp(1rem, 2.6vw, 2rem) clamp(1rem, 2.2vw, 1.6rem);
+    position: relative;
+}
+
+.terminalWindow::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: clamp(1.35rem, 2.2vw, 1.8rem);
+    background:
+        radial-gradient(circle at 1rem 50%, var(--red) 0 4px, transparent 4.5px),
+        radial-gradient(circle at 2rem 50%, var(--yellow) 0 4px, transparent 4.5px),
+        radial-gradient(circle at 3rem 50%, var(--green) 0 4px, transparent 4.5px),
+        linear-gradient(90deg, rgba(23, 25, 20, 0.12), rgba(23, 25, 20, 0.04));
+    border-bottom: 1px solid rgba(23, 25, 20, 0.14);
+}
+
+.terminalWindow::after {
+    content: '';
+    position: absolute;
+    inset: clamp(1.35rem, 2.2vw, 1.8rem) 0 auto 0;
+    height: 2px;
+    background: linear-gradient(90deg, var(--green), var(--cyan), var(--orange));
+}
+
+.terminalWindow > .promptLine .prompt,
+.terminalWindow .infoGrid .prompt,
+.terminalWindow .sectionHeader .prompt {
+    color: #5b7f20;
+}
+
+.terminalWindow > .promptLine .flag,
+.terminalWindow .infoGrid .flag,
+.terminalWindow .sectionHeader .flag,
+.flowSlide .flowStep .str {
+    color: #087985;
+}
+
+.terminalWindow > .promptLine .str,
+.flowSlide .flowStep .value {
+    color: #9a4313;
+}
+
+.flowSlide .flowStep .keyword {
+    color: #7040a2;
+}
+
+/* ===========================================
+   STATUS BAR (bottom of every slide)
+   =========================================== */
+.statusBar {
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    background: rgba(11, 12, 9, 0.78);
+    border-top: 1px solid rgba(245, 246, 230, 0.16);
+    padding: clamp(0.25rem, 0.5vw, 0.4rem) clamp(1rem, 2vw, 2rem);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: var(--smallSize);
+    color: var(--textSecondary);
+    font-family: var(--fontMono);
+    backdrop-filter: blur(12px);
+    z-index: 6;
+}
+
+.statusBar .dotGreen {
+    display: inline-block;
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--green);
+    margin-right: 6px;
+    vertical-align: middle;
+}
+
+/* ===========================================
+   PROGRESS BAR
+   =========================================== */
+.progressBar {
+    position: fixed;
+    top: 0; left: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--green), var(--cyan), var(--orange));
+    box-shadow: 0 0 18px var(--greenGlow);
+    z-index: 1000;
+    transition: width 0.3s ease;
+    width: 0%;
+}
+
+/* ===========================================
+   NAVIGATION DOTS
+   =========================================== */
+.navDots {
+    position: fixed;
+    right: clamp(0.8rem, 1.5vw, 1.2rem);
+    top: 50%;
+    transform: translateY(-50%);
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    z-index: 1000;
+}
+
+.navDot {
+    width: 7px; height: 24px;
+    border-radius: 999px;
+    border: 1px solid rgba(245, 246, 230, 0.28);
+    background: rgba(11, 12, 9, 0.44);
+    cursor: pointer;
+    transition: all 0.3s ease;
+    padding: 0;
+}
+
+.navDot.active {
+    height: 34px;
+    background: linear-gradient(180deg, var(--green), var(--cyan));
+    border-color: var(--green);
+    box-shadow: 0 0 14px var(--greenGlow);
+}
+
+.navDot:hover {
+    border-color: var(--green);
+}
+
+/* ===========================================
+   SLIDE 1: TITLE
+   =========================================== */
+.titleSlide .terminalWindow {
+    width: min(90vw, 820px);
+    margin: 0 auto;
+    position: relative;
+    z-index: 6;
+}
+
+.titleSlide .promptLine {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    font-size: var(--bodySize);
+    line-height: 1.8;
+    font-family: var(--fontMono);
+}
+
+.titleSlide .asciiArt {
+    color: var(--green);
+    font-size: clamp(0.48rem, 0.95vw, 0.84rem);
+    line-height: 1.05;
+    white-space: pre;
+    text-shadow: 0 0 18px rgba(183, 255, 79, 0.38);
+    margin: calc(var(--contentGap) * 0.8) 0 var(--contentGap);
+    letter-spacing: 0;
+}
+
+.titleSlide .infoGrid {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: clamp(0.15rem, 0.4vw, 0.3rem) clamp(1rem, 2vw, 2rem);
+    font-size: var(--bodySize);
+    font-family: var(--fontMono);
+    padding-top: var(--elementGap);
+}
+
+.titleSlide .infoKey {
+    color: #68705f;
+    text-align: right;
+    letter-spacing: 0.08em;
+}
+
+/* ===========================================
+   SLIDE 2: THE PROBLEM
+   =========================================== */
+.problemSlide .terminalWindow {
+    width: min(90vw, 800px);
+    margin: 0 auto;
+    position: relative;
+    z-index: 6;
+}
+
+.problemSlide .sectionHeader {
+    font-size: var(--h2Size);
+    font-weight: 700;
+    color: var(--red);
+    margin-bottom: var(--contentGap);
+    display: flex; align-items: center; gap: 10px;
+    font-family: var(--fontDisplay);
+}
+
+.problemSlide .errorBlock {
+    background: rgba(23, 25, 20, 0.92);
+    border: 1px solid rgba(255, 93, 93, 0.26);
+    border-radius: 6px;
+    padding: clamp(0.6rem, 1.2vw, 1rem) clamp(0.8rem, 1.5vw, 1.2rem);
+    margin-bottom: var(--elementGap);
+    font-size: var(--bodySize);
+    font-family: var(--fontMono);
+    line-height: 1.6;
+    color: var(--textPrimary);
+}
+
+.problemSlide .statRow {
+    display: flex;
+    gap: clamp(0.5rem, 1.5vw, 1.5rem);
+    margin-top: var(--contentGap);
+    flex-wrap: wrap;
+}
+
+.problemSlide .statBox {
+    flex: 1;
+    min-width: 120px;
+    background: rgba(23, 25, 20, 0.07);
+    border: 1px solid rgba(23, 25, 20, 0.12);
+    border-radius: 6px;
+    padding: clamp(0.5rem, 1vw, 0.8rem);
+    text-align: center;
+}
+
+.problemSlide .statVal {
+    font-size: var(--h3Size);
+    font-weight: 700;
+    color: var(--red);
+    display: block;
+}
+
+.problemSlide .statLabel {
+    font-size: var(--smallSize);
+    color: #68705f;
+    margin-top: 2px;
+    display: block;
+}
+
+/* ===========================================
+   SLIDE 3: HOW IT WORKS
+   =========================================== */
+.flowSlide .terminalWindow {
+    width: min(90vw, 800px);
+    margin: 0 auto;
+    position: relative;
+    z-index: 6;
+}
+
+.flowSlide .sectionHeader {
+    font-size: var(--h2Size);
+    font-weight: 700;
+    color: var(--green);
+    margin-bottom: var(--contentGap);
+    font-family: var(--fontDisplay);
+}
+
+.flowSlide .flowStep {
+    display: flex;
+    align-items: flex-start;
+    gap: clamp(0.5rem, 1vw, 1rem);
+    padding: clamp(0.4rem, 0.8vw, 0.6rem) 0;
+    font-size: var(--bodySize);
+    font-family: var(--fontMono);
+    line-height: 1.5;
+    border-bottom: 1px solid rgba(23, 25, 20, 0.13);
+}
+
+.flowSlide .flowStep:last-child { border-bottom: none; }
+
+.flowSlide .stepNum {
+    flex-shrink: 0;
+    width: clamp(1.4rem, 2vw, 1.8rem);
+    height: clamp(1.4rem, 2vw, 1.8rem);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+    font-size: var(--smallSize);
+    font-weight: 700;
+}
+
+.flowSlide .stepNum.req { background: rgba(183, 255, 79, 0.16); color: #5b7f20; }
+.flowSlide .stepNum.pay { background: rgba(124, 246, 255, 0.18); color: #05727b; }
+.flowSlide .stepNum.sign { background: rgba(255, 138, 76, 0.18); color: #9a4313; }
+.flowSlide .stepNum.capture { background: rgba(212, 168, 255, 0.18); color: #7040a2; }
+.flowSlide .stepNum.json { background: rgba(255, 209, 102, 0.24); color: #8a6500; }
+
+.flowSlide .stepArrow {
+    color: var(--textSecondary);
+    font-size: var(--smallSize);
+    text-align: center;
+    padding: clamp(0.1rem, 0.3vw, 0.2rem) 0;
+}
+
+.flowSlide .codeInline {
+    background: rgba(23, 25, 20, 0.08);
+    border: 1px solid rgba(23, 25, 20, 0.13);
+    border-radius: 4px;
+    padding: 1px 6px;
+    font-size: calc(var(--bodySize) * 0.9);
+}
+
+/* ===========================================
+   SLIDE 4: WHAT WORKS / WHAT DOESN'T
+   =========================================== */
+.coverageSlide .terminalWindow {
+    width: min(90vw, 850px);
+    margin: 0 auto;
+    position: relative;
+    z-index: 6;
+}
+
+.coverageSlide .sectionHeader {
+    font-size: var(--h2Size);
+    font-weight: 700;
+    color: var(--cyan);
+    margin-bottom: clamp(0.3rem, 0.8vw, 0.6rem);
+    font-family: var(--fontDisplay);
+}
+
+.coverageSlide .outputNote {
+    font-size: var(--bodySize);
+    color: #555b4c;
+    margin-bottom: var(--contentGap);
+}
+
+.coverageSlide .outputNote .highlight { color: #087985; font-weight: 700; }
+
+.coverageSlide .twoCol {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: clamp(1rem, 2vw, 2rem);
+}
+
+@media (max-width: 700px) {
+    .coverageSlide .twoCol { grid-template-columns: 1fr; }
+}
+
+.coverageSlide .colHeader {
+    font-size: var(--h3Size);
+    font-weight: 700;
+    margin-bottom: var(--elementGap);
+    display: flex; align-items: center; gap: 6px;
+    font-family: var(--fontDisplay);
+}
+
+.coverageSlide .colHeader.green { color: #5b7f20; }
+.coverageSlide .colHeader.red { color: var(--red); }
+
+.coverageSlide .domainTags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: clamp(0.25rem, 0.5vw, 0.4rem);
+}
+
+.coverageSlide .tag {
+    font-size: clamp(0.55rem, 0.9vw, 0.75rem);
+    padding: 4px 10px;
+    border-radius: 999px;
+    background: rgba(23, 25, 20, 0.07);
+    font-family: var(--fontMono);
+    white-space: nowrap;
+}
+
+.coverageSlide .tag.works {
+    border: 1px solid rgba(91, 127, 32, 0.34);
+    color: #4e7417;
+}
+
+.coverageSlide .tag.blocked {
+    border: 1px solid rgba(255, 93, 93, 0.38);
+    color: var(--red);
+    text-decoration: line-through;
+    text-decoration-color: rgba(255, 93, 93, 0.5);
+}
+
+/* ===========================================
+   SLIDE 5: GET STARTED / CTA
+   =========================================== */
+.ctaSlide .terminalWindow {
+    width: min(90vw, 750px);
+    margin: 0 auto;
+    position: relative;
+    z-index: 6;
+}
+
+.ctaSlide .sectionHeader {
+    font-size: var(--h2Size);
+    font-weight: 700;
+    color: var(--yellow);
+    margin-bottom: var(--contentGap);
+    font-family: var(--fontDisplay);
+}
+
+.ctaSlide .codeBlock {
+    background: rgba(23, 25, 20, 0.92);
+    border: 1px solid rgba(245, 246, 230, 0.14);
+    border-radius: 6px;
+    padding: clamp(0.6rem, 1.2vw, 1rem) clamp(0.8rem, 1.5vw, 1.2rem);
+    margin-bottom: var(--elementGap);
+    font-size: var(--bodySize);
+    font-family: var(--fontMono);
+    line-height: 1.6;
+    overflow-x: auto;
+    color: var(--textPrimary);
+}
+
+.ctaSlide .codeBlock .codeLabel {
+    font-size: var(--smallSize);
+    color: #c4c8b5;
+    margin-bottom: clamp(0.3rem, 0.5vw, 0.5rem);
+    display: flex; align-items: center; gap: 6px;
+}
+
+.ctaSlide .ctaFooter {
+    text-align: center;
+    margin-top: var(--contentGap);
+    font-size: var(--bodySize);
+}
+
+.ctaSlide .ctaLink {
+    color: #5b7f20;
+    font-weight: 700;
+    text-decoration: none;
+    text-shadow: 0 0 8px var(--greenGlow);
+}
+
+.ctaSlide .hackathonBadge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: var(--elementGap);
+    padding: clamp(0.3rem, 0.6vw, 0.5rem) clamp(0.8rem, 1.5vw, 1.2rem);
+    border: 1px solid rgba(138, 101, 0, 0.34);
+    border-radius: 4px;
+    color: #8a6500;
+    font-size: var(--smallSize);
+    font-weight: 700;
+    letter-spacing: 0.05em;
+}
+
+/* ===========================================
+   INLINE EDITING (opt-in)
+   =========================================== */
+.editHotzone {
+    position: fixed;
+    top: 0; left: 0;
+    width: 80px; height: 80px;
+    z-index: 10000;
+    cursor: pointer;
+}
+
+.editToggle {
+    position: fixed;
+    top: 12px; left: 12px;
+    background: rgba(11, 12, 9, 0.84);
+    border: 1px solid rgba(245, 246, 230, 0.18);
+    color: var(--green);
+    font-family: var(--fontMono);
+    font-size: 14px;
+    padding: 6px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    z-index: 10001;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+}
+
+.editToggle.show,
+.editToggle.active {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.editToggle:hover {
+    background: var(--greenDim);
+}
+
+.editBanner {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    background: var(--green);
+    color: var(--ink);
+    text-align: center;
+    font-family: var(--fontMono);
+    font-size: 12px;
+    font-weight: 700;
+    padding: 4px;
+    z-index: 9999;
+    transform: translateY(-100%);
+    transition: transform 0.3s ease;
+}
+
+.editBanner.active {
+    transform: translateY(0);
+}
+
+body.editActive [contenteditable="true"] {
+    outline: 1px dashed rgba(183, 255, 79, 0.55);
+    outline-offset: 2px;
+    cursor: text;
+    border-radius: 2px;
+}
+
+body.editActive [contenteditable="true"]:focus {
+    outline-color: var(--green);
+    background: rgba(183, 255, 79, 0.08);
+}
+
+/* ===========================================
+   VOICEOVER CONTROLS
+   =========================================== */
+.audioToggle {
+    position: fixed;
+    bottom: clamp(2rem, 4vh, 3.5rem);
+    left: clamp(1rem, 2vw, 2rem);
+    background: rgba(11, 12, 9, 0.8);
+    border: 1px solid rgba(245, 246, 230, 0.18);
+    color: var(--green);
+    font-family: var(--fontMono);
+    font-size: clamp(0.6rem, 1vw, 0.8rem);
+    padding: 6px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    z-index: 1000;
+    transition: all 0.3s ease;
+    display: flex; align-items: center; gap: 6px;
+    backdrop-filter: blur(10px);
+}
+
+.audioToggle:hover {
+    background: var(--greenDim);
+    border-color: var(--green);
+}
+
+.audioToggle.muted {
+    color: var(--textSecondary);
+    border-color: rgba(245, 246, 230, 0.16);
+}
+
+/* Autoplay prompt — browsers need a user click first */
+.autoplayPrompt {
+    position: fixed;
+    inset: 0;
+    background:
+        linear-gradient(rgba(245, 246, 230, 0.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(245, 246, 230, 0.035) 1px, transparent 1px),
+        rgba(11, 12, 9, 0.94);
+    background-size: 42px 42px, 42px 42px, auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 20000;
+    gap: clamp(0.8rem, 1.5vw, 1.5rem);
+    opacity: 1;
+    transition: opacity 0.4s ease;
+}
+
+.autoplayPrompt.hidden {
+    opacity: 0;
+    pointer-events: none;
+}
+
+.autoplayPrompt .playBtn {
+    width: clamp(60px, 10vw, 90px);
+    height: clamp(60px, 10vw, 90px);
+    border-radius: 50%;
+    background: var(--greenDim);
+    border: 2px solid var(--green);
+    color: var(--green);
+    font-size: clamp(1.5rem, 3vw, 2.5rem);
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.3s ease;
+    box-shadow: 0 0 20px var(--greenGlow);
+    animation: pulsePlay 2s infinite ease-in-out;
+}
+
+.autoplayPrompt .playBtn:hover {
+    background: var(--green);
+    color: var(--bgPrimary);
+    box-shadow: 0 0 40px var(--greenGlow);
+}
+
+@keyframes pulsePlay {
+    0%, 100% { box-shadow: 0 0 20px var(--greenGlow); }
+    50% { box-shadow: 0 0 35px var(--greenGlow), 0 0 60px rgba(183, 255, 79, 0.16); }
+}
+
+.autoplayPrompt .playLabel {
+    font-family: var(--fontMono);
+    font-size: var(--bodySize);
+    color: var(--textSecondary);
+}
+
+.autoplayPrompt .playSublabel {
+    font-family: var(--fontMono);
+    font-size: var(--smallSize);
+    color: var(--textMuted);
+}
+
+/* Audio waveform indicator */
+.audioIndicator {
+    display: inline-flex;
+    align-items: flex-end;
+    gap: 2px;
+    height: 12px;
+}
+
+.audioIndicator .bar {
+    width: 2px;
+    background: var(--green);
+    border-radius: 1px;
+    animation: wave 0.8s ease-in-out infinite;
+}
+
+.audioIndicator .bar:nth-child(1) { height: 4px; animation-delay: 0s; }
+.audioIndicator .bar:nth-child(2) { height: 8px; animation-delay: 0.1s; }
+.audioIndicator .bar:nth-child(3) { height: 12px; animation-delay: 0.2s; }
+.audioIndicator .bar:nth-child(4) { height: 6px; animation-delay: 0.3s; }
+
+@keyframes wave {
+    0%, 100% { transform: scaleY(1); }
+    50% { transform: scaleY(0.4); }
+}
+
+.audioToggle.muted .audioIndicator .bar {
+    animation: none;
+    height: 3px;
+    background: var(--textSecondary);
+}
+</style>
+</head>
+<body>
+
+<!-- Progress bar -->
+<div class="progressBar" id="progressBar"></div>
+
+<!-- Navigation dots -->
+<nav class="navDots" id="navDots"></nav>
+
+<!-- Autoplay prompt (browsers need user gesture for audio) -->
+<div class="autoplayPrompt" id="autoplayPrompt">
+    <button class="playBtn" id="playBtn" aria-label="Start presentation with voiceover">&#x25B6;</button>
+    <div class="playLabel">Click to start with voiceover</div>
+    <div class="playSublabel">30s &bull; 5 slides &bull; auto-advance</div>
+</div>
+
+<!-- Audio mute toggle -->
+<button class="audioToggle" id="audioToggle" aria-label="Toggle voiceover">
+    <span class="audioIndicator">
+        <span class="bar"></span><span class="bar"></span><span class="bar"></span><span class="bar"></span>
+    </span>
+    <span id="audioLabel">voice on</span>
+</button>
+
+<!-- Edit mode UI -->
+<div class="editHotzone" id="editHotzone"></div>
+<button class="editToggle" id="editToggle">edit</button>
+<div class="editBanner" id="editBanner">EDIT MODE — click any text to edit &bull; Ctrl+S to save</div>
+
+<!-- =============================================
+     SLIDE 1: TITLE — eyez intro
+     ============================================= -->
+<section class="slide titleSlide" id="slide0">
+    <span class="slideNumber">01/05</span>
+    <div class="slideContent">
+        <div class="terminalWindow">
+            <div class="promptLine reveal">
+                <span class="prompt">$</span>&nbsp;
+                <span>curl <span class="flag">-X GET</span> <span class="str">"eyez.app/capture?url=..."</span></span>
+            </div>
+            <div class="promptLine reveal">
+                <span class="prompt">&larr;</span>&nbsp;
+                <span><span class="value">402</span> Payment Required <span class="flag">|</span> <span class="str">$0.001 USDC</span></span>
+            </div>
+            <div class="promptLine reveal">
+                <span class="prompt">$</span>&nbsp;
+                <span>arc pay <span class="flag">--amount</span> <span class="value">0.001</span> <span class="flag">--send</span><span class="cursorBlink"></span></span>
+            </div>
+
+            <div class="divider reveal"></div>
+
+            <pre class="asciiArt reveal" aria-label="eyez wordmark">
+ ███████╗██╗   ██╗███████╗███████╗
+ ██╔════╝╚██╗ ██╔╝██╔════╝╚══███╔╝
+ █████╗   ╚████╔╝ █████╗    ███╔╝
+ ██╔══╝    ╚██╔╝  ██╔══╝   ███╔╝
+ ███████╗   ██║   ███████╗███████╗
+ ╚══════╝   ╚═╝   ╚══════╝╚══════╝</pre>
+
+            <div class="infoGrid reveal">
+                <span class="infoKey">SERVICE</span>
+                <span>Headless browser API for <span class="prompt">AI agents</span></span>
+                <span class="infoKey">PRICE</span>
+                <span><span class="prompt">$0.001</span> USDC per capture</span>
+                <span class="infoKey">NETWORK</span>
+                <span><span class="flag">Arc</span> x402 payments</span>
+                <span class="infoKey">ENGINE</span>
+                <span><span class="value">Playwright</span> + Chromium</span>
+            </div>
+        </div>
+    </div>
+    <div class="statusBar">
+        <span><span class="dotGreen"></span>eyez live</span>
+        <span>arc:testnet</span>
+        <span>Arc USDC</span>
+    </div>
+</section>
+
+<!-- =============================================
+     SLIDE 2: THE PROBLEM
+     ============================================= -->
+<section class="slide problemSlide" id="slide1">
+    <span class="slideNumber">02/05</span>
+    <div class="slideContent">
+        <div class="terminalWindow">
+            <div class="sectionHeader reveal">
+                <span class="error">&#x2718;</span> The Problem
+            </div>
+
+            <div class="errorBlock reveal">
+                <span class="comment">// AI agents are HTTP clients — they can't execute JavaScript</span><br>
+                <span class="error">fetch</span>(<span class="str">"https://app.uniswap.org"</span>)<br>
+                &nbsp;&nbsp;<span class="comment">// &rarr; Returns empty &lt;div id="root"&gt;&lt;/div&gt;</span><br>
+                &nbsp;&nbsp;<span class="comment">// &rarr; Zero useful content from any SPA</span>
+            </div>
+
+            <div class="errorBlock reveal">
+                <span class="comment">// "Just install Chromium" isn't a solution for agents</span><br>
+                <span class="error">apt install chromium</span> <span class="comment">// +500MB disk, libnss3, libgbm...</span><br>
+                <span class="error">browser.launch()</span> <span class="comment">// +200-500MB RAM per instance</span><br>
+                <span class="comment">// Crashes, timeouts, memory leaks, zombie processes</span>
+            </div>
+
+            <div class="statRow reveal">
+                <div class="statBox">
+                    <span class="statVal">500MB+</span>
+                    <span class="statLabel">Chromium install</span>
+                </div>
+                <div class="statBox">
+                    <span class="statVal">200-500MB</span>
+                    <span class="statLabel">RAM per capture</span>
+                </div>
+                <div class="statBox">
+                    <span class="statVal">90%+</span>
+                    <span class="statLabel">SPAs need JS</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="statusBar">
+        <span><span class="dotGreen"></span>problem space</span>
+        <span>agents can't see the modern web</span>
+    </div>
+</section>
+
+<!-- =============================================
+     SLIDE 3: HOW IT WORKS — x402 payment flow
+     ============================================= -->
+<section class="slide flowSlide" id="slide2">
+    <span class="slideNumber">03/05</span>
+    <div class="slideContent">
+        <div class="terminalWindow">
+            <div class="sectionHeader reveal">
+                <span class="prompt">&#x25B6;</span> How It Works
+            </div>
+
+            <div class="flowStep reveal">
+                <span class="stepNum req">1</span>
+                <div>
+                    Agent requests <span class="codeInline">GET /capture?url=<span class="str">target</span></span><br>
+                    <span class="comment">// Any public URL — social, DeFi, analytics, news</span>
+                </div>
+            </div>
+
+            <div class="flowStep reveal">
+                <span class="stepNum pay">2</span>
+                <div>
+                    Server returns <span class="value">402 Payment Required</span><br>
+                    <span class="comment">// Includes Arc payment details via x402 header</span>
+                </div>
+            </div>
+
+            <div class="flowStep reveal">
+                <span class="stepNum sign">3</span>
+                <div>
+                    Agent signs <span class="codeInline"><span class="value">$0.001</span> USDC</span> on Arc Testnet<br>
+                    <span class="comment">// x402.org facilitator verifies — ~5s settlement</span>
+                </div>
+            </div>
+
+            <div class="flowStep reveal">
+                <span class="stepNum capture">4</span>
+                <div>
+                    Playwright captures page with <span class="keyword">smart waiting</span><br>
+                    <span class="comment">// Lazy-load handling, dynamic scroll, SPA hydration</span>
+                </div>
+            </div>
+
+            <div class="flowStep reveal">
+                <span class="stepNum json">5</span>
+                <div>
+                    Returns structured JSON: title, headings, links, content<br>
+                    <span class="comment">// Blocked page? Auto-refund on-chain. Zero risk.</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="statusBar">
+        <span><span class="dotGreen"></span>x402 flow</span>
+        <span>request &rarr; 402 &rarr; sign &rarr; capture &rarr; JSON</span>
+    </div>
+</section>
+
+<!-- =============================================
+     SLIDE 4: WHAT WORKS / WHAT DOESN'T
+     ============================================= -->
+<section class="slide coverageSlide" id="slide3">
+    <span class="slideNumber">04/05</span>
+    <div class="slideContent">
+        <div class="terminalWindow">
+            <div class="sectionHeader reveal">
+                <span class="flag">&#x2699;</span> What Works
+            </div>
+
+            <div class="outputNote reveal">
+                Returns <span class="highlight">structured JSON</span> — title, headings, links, and full page content.
+            </div>
+
+            <div class="twoCol">
+                <div class="reveal">
+                    <div class="colHeader green"><span>&#x2713;</span> Works (40+ domains)</div>
+                    <div class="domainTags">
+                        <span class="tag works">Uniswap</span>
+                        <span class="tag works">Aave</span>
+                        <span class="tag works">Compound</span>
+                        <span class="tag works">CoinGecko</span>
+                        <span class="tag works">DeFiLlama</span>
+                        <span class="tag works">Dune</span>
+                        <span class="tag works">X / Twitter</span>
+                        <span class="tag works">LinkedIn</span>
+                        <span class="tag works">TikTok</span>
+                        <span class="tag works">Coinbase</span>
+                        <span class="tag works">OKX</span>
+                        <span class="tag works">Kraken</span>
+                        <span class="tag works">Arcscan</span>
+                        <span class="tag works">Soroswap</span>
+                        <span class="tag works">LOBSTR</span>
+                        <span class="tag works">Blur</span>
+                        <span class="tag works">DexScreener</span>
+                        <span class="tag works">Freighter</span>
+                    </div>
+                </div>
+
+                <div class="reveal">
+                    <div class="colHeader red"><span>&#x2718;</span> Blocked</div>
+                    <div class="domainTags">
+                        <span class="tag blocked">Reddit</span>
+                        <span class="tag blocked">Binance</span>
+                        <span class="tag blocked">Etherscan</span>
+                        <span class="tag blocked">Instagram</span>
+                        <span class="tag blocked">OpenSea</span>
+                        <span class="tag blocked">ProductHunt</span>
+                    </div>
+                    <div class="outputNote reveal" style="margin-top: var(--elementGap); font-size: var(--smallSize);">
+                        <span class="comment">// IP reputation / Cloudflare — not a capture issue</span><br>
+                        <span class="comment">// Blocked pages get auto-refunded on-chain</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="statusBar">
+        <span><span class="dotGreen"></span>coverage</span>
+        <span>structured JSON output</span>
+        <span>blocked = auto-refund</span>
+    </div>
+</section>
+
+<!-- =============================================
+     SLIDE 5: GET STARTED / CTA
+     ============================================= -->
+<section class="slide ctaSlide" id="slide4">
+    <span class="slideNumber">05/05</span>
+    <div class="slideContent">
+        <div class="terminalWindow">
+            <div class="sectionHeader reveal">
+                <span class="value">&#x26A1;</span> Get Started
+            </div>
+
+            <div class="codeBlock reveal">
+                <div class="codeLabel"><span class="prompt">&#x25CF;</span> Option 1: MCP Tool</div>
+                <span class="comment">// .mcp.json — transparent payment handling</span><br>
+                {<br>
+                &nbsp;&nbsp;<span class="str">"mcpServers"</span>: {<br>
+                &nbsp;&nbsp;&nbsp;&nbsp;<span class="str">"eyez"</span>: {<br>
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="str">"command"</span>: <span class="str">"node"</span>,<br>
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="str">"args"</span>: [<span class="str">"mcpServer.js"</span>]<br>
+                &nbsp;&nbsp;&nbsp;&nbsp;}<br>
+                &nbsp;&nbsp;}<br>
+                }
+            </div>
+
+            <div class="codeBlock reveal">
+                <div class="codeLabel"><span class="flag">&#x25CF;</span> Option 2: x402 Fetch (Node.js)</div>
+                <span class="keyword">import</span> { wrapFetch } <span class="keyword">from</span> <span class="str">"@x402/fetch"</span>;<br>
+                <span class="keyword">const</span> res = <span class="keyword">await</span> fetch402(<br>
+                &nbsp;&nbsp;<span class="str">`eyez.app/capture?url=${url}`</span><br>
+                );
+            </div>
+
+            <div class="ctaFooter reveal">
+                <a href="https://github.com/tantk/eyez" class="ctaLink" target="_blank">github.com/tantk/eyez</a>
+                <div class="hackathonBadge">
+                    <span>&#x2605;</span> Built for Arc agents
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="statusBar">
+        <span><span class="dotGreen"></span>ready</span>
+        <span>$0.001 USDC &bull; zero agent overhead</span>
+        <span>github.com/tantk/eyez</span>
+    </div>
+</section>
+
+<!-- =============================================
+     PRESENTATION CONTROLLER
+     ============================================= -->
+<script>
+/* ===========================================
+   SLIDE PRESENTATION CONTROLLER
+   Handles navigation, animations, progress
+   =========================================== */
+class SlidePresentation {
+    constructor() {
+        this.slides = document.querySelectorAll('.slide');
+        this.currentSlide = 0;
+        this.isScrolling = false;
+        this.scrollTimeout = null;
+
+        this.setupIntersectionObserver();
+        this.setupKeyboardNav();
+        this.setupTouchNav();
+        this.setupWheelNav();
+        this.setupProgressBar();
+        this.setupNavDots();
+
+        // Mark first slide visible
+        this.slides[0]?.classList.add('visible');
+    }
+
+    /* --- Intersection Observer: add .visible on scroll --- */
+    setupIntersectionObserver() {
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                    const idx = Array.from(this.slides).indexOf(entry.target);
+                    if (idx !== -1) {
+                        this.currentSlide = idx;
+                        this.updateProgressBar();
+                        this.updateNavDots();
+                    }
+                }
+            });
+        }, { threshold: 0.5 });
+
+        this.slides.forEach(slide => observer.observe(slide));
+    }
+
+    /* --- Keyboard: arrows, space, page up/down --- */
+    setupKeyboardNav() {
+        document.addEventListener('keydown', (e) => {
+            // Skip if editing text
+            if (e.target.getAttribute('contenteditable')) return;
+
+            switch(e.key) {
+                case 'ArrowDown':
+                case 'ArrowRight':
+                case ' ':
+                case 'PageDown':
+                    e.preventDefault();
+                    this.goToSlide(this.currentSlide + 1);
+                    break;
+                case 'ArrowUp':
+                case 'ArrowLeft':
+                case 'PageUp':
+                    e.preventDefault();
+                    this.goToSlide(this.currentSlide - 1);
+                    break;
+                case 'Home':
+                    e.preventDefault();
+                    this.goToSlide(0);
+                    break;
+                case 'End':
+                    e.preventDefault();
+                    this.goToSlide(this.slides.length - 1);
+                    break;
+            }
+        });
+    }
+
+    /* --- Touch/swipe --- */
+    setupTouchNav() {
+        let startY = 0;
+        document.addEventListener('touchstart', (e) => {
+            startY = e.touches[0].clientY;
+        }, { passive: true });
+
+        document.addEventListener('touchend', (e) => {
+            const diff = startY - e.changedTouches[0].clientY;
+            if (Math.abs(diff) > 50) {
+                this.goToSlide(this.currentSlide + (diff > 0 ? 1 : -1));
+            }
+        }, { passive: true });
+    }
+
+    /* --- Mouse wheel --- */
+    setupWheelNav() {
+        document.addEventListener('wheel', (e) => {
+            if (this.isScrolling) return;
+            this.isScrolling = true;
+
+            if (e.deltaY > 30) {
+                this.goToSlide(this.currentSlide + 1);
+            } else if (e.deltaY < -30) {
+                this.goToSlide(this.currentSlide - 1);
+            }
+
+            clearTimeout(this.scrollTimeout);
+            this.scrollTimeout = setTimeout(() => {
+                this.isScrolling = false;
+            }, 800);
+        }, { passive: true });
+    }
+
+    /* --- Navigation --- */
+    goToSlide(index) {
+        if (index < 0 || index >= this.slides.length) return;
+        this.currentSlide = index;
+        this.slides[index].scrollIntoView({ behavior: 'smooth' });
+        this.updateProgressBar();
+        this.updateNavDots();
+    }
+
+    /* --- Progress bar --- */
+    setupProgressBar() {
+        this.progressBar = document.getElementById('progressBar');
+        this.updateProgressBar();
+    }
+
+    updateProgressBar() {
+        if (!this.progressBar) return;
+        const pct = ((this.currentSlide + 1) / this.slides.length) * 100;
+        this.progressBar.style.width = pct + '%';
+    }
+
+    /* --- Nav dots --- */
+    setupNavDots() {
+        const container = document.getElementById('navDots');
+        if (!container) return;
+        container.innerHTML = '';
+
+        this.slides.forEach((_, i) => {
+            const dot = document.createElement('button');
+            dot.className = 'navDot' + (i === 0 ? ' active' : '');
+            dot.setAttribute('aria-label', `Go to slide ${i + 1}`);
+            dot.addEventListener('click', () => this.goToSlide(i));
+            container.appendChild(dot);
+        });
+    }
+
+    updateNavDots() {
+        const dots = document.querySelectorAll('.navDot');
+        dots.forEach((dot, i) => {
+            dot.classList.toggle('active', i === this.currentSlide);
+        });
+    }
+}
+
+/* ===========================================
+   INLINE EDITOR
+   Hover top-left corner or press E to toggle
+   =========================================== */
+class InlineEditor {
+    constructor() {
+        this.isActive = false;
+        this.editToggle = document.getElementById('editToggle');
+        this.editBanner = document.getElementById('editBanner');
+        this.editHotzone = document.getElementById('editHotzone');
+        this.hideTimeout = null;
+
+        this.setupHotzone();
+        this.setupKeyboard();
+        this.loadSaved();
+    }
+
+    /* Toggle edit mode on/off */
+    toggleEditMode() {
+        this.isActive = !this.isActive;
+
+        if (this.isActive) {
+            document.body.classList.add('editActive');
+            this.editToggle.classList.add('active');
+            this.editToggle.textContent = 'done';
+            this.editBanner.classList.add('active');
+            this.makeEditable(true);
+        } else {
+            document.body.classList.remove('editActive');
+            this.editToggle.classList.remove('active');
+            this.editToggle.textContent = 'edit';
+            this.editBanner.classList.remove('active');
+            this.makeEditable(false);
+            this.saveToLocalStorage();
+        }
+    }
+
+    /* Make all text elements editable */
+    makeEditable(state) {
+        const selectors = 'h1, h2, h3, p, span:not(.prompt):not(.flag):not(.value):not(.str):not(.keyword):not(.comment):not(.error):not(.dotGreen):not(.cursorBlink):not(.stepNum):not(.featureIcon):not(.navDot), .infoKey, .infoVal, .statVal, .statLabel, .featureItem, .codeLabel, .tag';
+        document.querySelectorAll(selectors).forEach(el => {
+            if (state) {
+                el.setAttribute('contenteditable', 'true');
+            } else {
+                el.removeAttribute('contenteditable');
+            }
+        });
+    }
+
+    /* Hotzone hover with 400ms grace period */
+    setupHotzone() {
+        this.editHotzone.addEventListener('mouseenter', () => {
+            clearTimeout(this.hideTimeout);
+            this.editToggle.classList.add('show');
+        });
+        this.editHotzone.addEventListener('mouseleave', () => {
+            this.hideTimeout = setTimeout(() => {
+                if (!this.isActive) this.editToggle.classList.remove('show');
+            }, 400);
+        });
+        this.editToggle.addEventListener('mouseenter', () => {
+            clearTimeout(this.hideTimeout);
+        });
+        this.editToggle.addEventListener('mouseleave', () => {
+            this.hideTimeout = setTimeout(() => {
+                if (!this.isActive) this.editToggle.classList.remove('show');
+            }, 400);
+        });
+        this.editToggle.addEventListener('click', () => this.toggleEditMode());
+        this.editHotzone.addEventListener('click', () => this.toggleEditMode());
+    }
+
+    /* E key shortcut */
+    setupKeyboard() {
+        document.addEventListener('keydown', (e) => {
+            if ((e.key === 'e' || e.key === 'E') && !e.target.getAttribute('contenteditable')) {
+                this.toggleEditMode();
+            }
+            // Ctrl+S to save/export
+            if (e.key === 's' && (e.ctrlKey || e.metaKey) && this.isActive) {
+                e.preventDefault();
+                this.exportFile();
+            }
+        });
+    }
+
+    /* Save to localStorage */
+    saveToLocalStorage() {
+        try {
+            const data = {};
+            document.querySelectorAll('[contenteditable]').forEach((el, i) => {
+                data[i] = el.innerHTML;
+            });
+            localStorage.setItem('eyezSlides', JSON.stringify(data));
+        } catch (e) { /* silent */ }
+    }
+
+    /* Load from localStorage */
+    loadSaved() {
+        try {
+            const saved = localStorage.getItem('eyezSlides');
+            if (!saved) return;
+            const data = JSON.parse(saved);
+            // Saved data exists but we don't auto-apply — user must opt in
+        } catch (e) { /* silent */ }
+    }
+
+    /* Export clean file */
+    exportFile() {
+        const editableEls = Array.from(document.querySelectorAll('[contenteditable]'));
+        editableEls.forEach(el => el.removeAttribute('contenteditable'));
+        document.body.classList.remove('editActive');
+
+        this.editToggle?.classList.remove('active', 'show');
+        this.editBanner?.classList.remove('active', 'show');
+
+        const html = '<!DOCTYPE html>\n' + document.documentElement.outerHTML;
+
+        document.body.classList.add('editActive');
+        editableEls.forEach(el => el.setAttribute('contenteditable', 'true'));
+        this.editToggle?.classList.add('active');
+        this.editBanner?.classList.add('active');
+
+        const blob = new Blob([html], { type: 'text/html' });
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = 'eyezPresentation.html';
+        a.click();
+        URL.revokeObjectURL(a.href);
+    }
+}
+
+/* ===========================================
+   VOICEOVER CONTROLLER
+   Auto-plays audio per slide, auto-advances
+   =========================================== */
+class VoiceoverController {
+    constructor(presentation) {
+        this.presentation = presentation;
+        this.muted = false;
+        this.autoAdvance = false;
+        this.currentAudio = null;
+        this.audioFiles = [
+            'audio/slide1.mp3',
+            'audio/slide2.mp3',
+            'audio/slide3.mp3',
+            'audio/slide4.mp3',
+            'audio/slide5.mp3'
+        ];
+
+        // Preload all audio
+        this.audioElements = this.audioFiles.map(src => {
+            const audio = new Audio(src);
+            audio.preload = 'auto';
+            return audio;
+        });
+
+        this.setupToggle();
+        this.setupAutoplay();
+    }
+
+    /* Mute/unmute toggle */
+    setupToggle() {
+        const toggle = document.getElementById('audioToggle');
+        const label = document.getElementById('audioLabel');
+        toggle.addEventListener('click', () => {
+            this.muted = !this.muted;
+            toggle.classList.toggle('muted', this.muted);
+            label.textContent = this.muted ? 'voice off' : 'voice on';
+            if (this.muted && this.currentAudio) {
+                this.currentAudio.pause();
+            }
+        });
+    }
+
+    /* Autoplay prompt — starts presentation with voice */
+    setupAutoplay() {
+        const prompt = document.getElementById('autoplayPrompt');
+        const playBtn = document.getElementById('playBtn');
+
+        playBtn.addEventListener('click', () => {
+            prompt.classList.add('hidden');
+            this.autoAdvance = true;
+            // Start playing slide 1
+            this.playSlide(0);
+        });
+
+        // Also allow skipping with any key
+        document.addEventListener('keydown', (e) => {
+            if (!prompt.classList.contains('hidden')) {
+                prompt.classList.add('hidden');
+                this.autoAdvance = true;
+                this.playSlide(0);
+            }
+        }, { once: true });
+    }
+
+    /* Play audio for a given slide index */
+    playSlide(index) {
+        // Stop current audio
+        if (this.currentAudio) {
+            this.currentAudio.pause();
+            this.currentAudio.currentTime = 0;
+        }
+
+        if (this.muted || index < 0 || index >= this.audioElements.length) return;
+
+        this.currentAudio = this.audioElements[index];
+        this.currentAudio.currentTime = 0;
+
+        // Auto-advance to next slide when audio ends
+        this.currentAudio.onended = () => {
+            if (this.autoAdvance && index < this.audioElements.length - 1) {
+                const nextIdx = index + 1;
+                this.presentation.goToSlide(nextIdx);
+                // Small delay before playing next slide audio
+                setTimeout(() => this.playSlide(nextIdx), 400);
+            }
+        };
+
+        this.currentAudio.play().catch(() => {
+            // Autoplay blocked — user hasn't interacted yet
+        });
+    }
+}
+
+/* Initialize */
+const presentation = new SlidePresentation();
+const editor = new InlineEditor();
+const voiceover = new VoiceoverController(presentation);
+
+/* Hook voiceover into slide navigation */
+const originalGoToSlide = presentation.goToSlide.bind(presentation);
+presentation.goToSlide = function(index) {
+    originalGoToSlide(index);
+    // Only play if user manually navigated (not auto-advance, which handles its own playback)
+    if (!voiceover.autoAdvance) {
+        voiceover.playSlide(index);
+    }
+};
+
+/* Also hook into intersection observer for scroll-based navigation */
+const originalSetupIO = presentation.setupIntersectionObserver.bind(presentation);
+// Patch: play audio when slide becomes visible via scroll
+document.addEventListener('scroll', () => {
+    // Debounce handled by the presentation controller
+}, { passive: true });
+</script>
+</body>
+</html>

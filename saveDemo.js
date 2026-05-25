@@ -1,0 +1,167 @@
+import "dotenv/config";
+import { mkdirSync, rmSync, writeFileSync } from "fs";
+import {
+  ARC_EXPLORER_URL,
+  createArcPaymentClient,
+  getClientPrivateKey,
+} from "./arc.js";
+
+const SERVER_URL = process.env.SERVER_URL || "http://localhost:3001";
+const EVM_PRIVATE_KEY = getClientPrivateKey();
+const targetUrl =
+  process.argv[2] || process.env.DEMO_URL || "https://x.com/circle";
+const outputDir = "demoOutput";
+
+if (!EVM_PRIVATE_KEY) {
+  console.error("ERROR: EVM_PRIVATE_KEY or ARC_PRIVATE_KEY not set in .env");
+  process.exit(1);
+}
+
+const { client, httpClient } = createArcPaymentClient(EVM_PRIVATE_KEY);
+
+function now() {
+  return new Date().toISOString();
+}
+
+function preview(text, max = 3000) {
+  if (!text) return "(empty)";
+  return text.length > max ? `${text.slice(0, max)}\n... [truncated]` : text;
+}
+
+async function recordPlainFetch(url) {
+  const started = Date.now();
+  const response = await fetch(url, {
+    headers: {
+      "user-agent": "eyezDemo/1.0",
+    },
+  });
+  const body = await response.text();
+  const elapsed = Date.now() - started;
+
+  return [
+    `# Plain fetch demo`,
+    `Recorded: ${now()}`,
+    `Target: ${url}`,
+    `Command: fetch("${url}")`,
+    ``,
+    `Status: ${response.status} ${response.statusText}`,
+    `Final URL: ${response.url}`,
+    `Content-Type: ${response.headers.get("content-type") || "(none)"}`,
+    `Elapsed: ${elapsed}ms`,
+    `Body length: ${body.length} chars`,
+    ``,
+    `## Body preview`,
+    preview(body),
+    ``,
+  ].join("\n");
+}
+
+async function recordPaidCapture(url) {
+  const endpoint = `${SERVER_URL}/capture?url=${encodeURIComponent(url)}`;
+  const log = [
+    `# eyez paid capture demo`,
+    `Recorded: ${now()}`,
+    `Target: ${url}`,
+    `Endpoint: ${endpoint}`,
+    ``,
+  ];
+
+  const firstTry = await fetch(endpoint);
+  log.push(`Initial response: ${firstTry.status} ${firstTry.statusText}`);
+
+  if (firstTry.status !== 402) {
+    const body = await firstTry.text();
+    log.push(`Expected 402 Payment Required but got ${firstTry.status}.`);
+    log.push(``, `## Response body`, preview(body), ``);
+    return log.join("\n");
+  }
+
+  const paymentRequired = httpClient.getPaymentRequiredResponse((name) =>
+    firstTry.headers.get(name),
+  );
+  const requirement = paymentRequired.accepts[0];
+
+  log.push(`x402 version: ${paymentRequired.x402Version}`);
+  log.push(`Scheme: ${requirement.scheme}`);
+  log.push(`Network: ${requirement.network}`);
+  log.push(`Asset: ${requirement.asset}`);
+  log.push(`Amount: ${requirement.amount}`);
+  log.push(`Pay to: ${requirement.payTo}`);
+  log.push(``, `Creating payment payload...`);
+
+  const paymentPayload = await client.createPaymentPayload(paymentRequired);
+  const headers = httpClient.encodePaymentSignatureHeader(paymentPayload);
+  const started = Date.now();
+  const paidResponse = await fetch(endpoint, { headers });
+  const elapsed = Date.now() - started;
+
+  log.push(`Paid response: ${paidResponse.status} ${paidResponse.statusText}`);
+  log.push(`Paid elapsed: ${elapsed}ms`);
+
+  try {
+    const settlement = httpClient.getPaymentSettleResponse((name) =>
+      paidResponse.headers.get(name),
+    );
+    log.push(`Settlement success: ${settlement.success}`);
+    log.push(`Settlement tx: ${settlement.transaction}`);
+    log.push(`Settlement network: ${settlement.network}`);
+    if (settlement.transaction) {
+      log.push(`Explorer: ${ARC_EXPLORER_URL}/tx/${settlement.transaction}`);
+    }
+  } catch {
+    log.push(`Settlement header: (missing)`);
+  }
+
+  const data = await paidResponse.json();
+  log.push(``, `## Capture result`);
+  log.push(`Title: ${data.title || "(none)"}`);
+  if (data.description) log.push(`Description: ${data.description}`);
+  log.push(`Capture time: ${data.captureTimeMs}ms`);
+  log.push(`Content length: ${data.content?.length || 0} chars`);
+
+  if (data.headings?.length) {
+    log.push(``, `## Headings`);
+    for (const heading of data.headings.slice(0, 10)) {
+      log.push(`${heading.level}: ${heading.text}`);
+    }
+  }
+
+  if (data.links?.length) {
+    log.push(``, `## Links`);
+    for (const link of data.links.slice(0, 10)) {
+      log.push(`${link.text?.slice(0, 80) || "(untitled)"} -> ${link.href}`);
+    }
+  }
+
+  if (data.refund) {
+    log.push(``, `## Refund`);
+    log.push(JSON.stringify(data.refund, null, 2));
+  }
+
+  log.push(``, `## Content preview`, preview(data.content), ``);
+  return log.join("\n");
+}
+
+rmSync(outputDir, { recursive: true, force: true });
+mkdirSync(outputDir, { recursive: true });
+
+console.log(`Recording plain fetch demo for ${targetUrl}...`);
+writeFileSync(`${outputDir}/plainFetch.log`, await recordPlainFetch(targetUrl));
+
+console.log(`Recording paid eyez capture demo for ${targetUrl}...`);
+writeFileSync(`${outputDir}/eyezCapture.log`, await recordPaidCapture(targetUrl));
+
+writeFileSync(
+  `${outputDir}/README.md`,
+  [
+    `# Demo Output`,
+    ``,
+    `Generated by \`node saveDemo.js ${targetUrl}\`.`,
+    ``,
+    `- \`plainFetch.log\`: direct Node fetch against the target URL.`,
+    `- \`eyezCapture.log\`: x402 paid eyez capture against the same URL.`,
+    ``,
+  ].join("\n"),
+);
+
+console.log(`Done. Logs written to ${outputDir}/`);
