@@ -105,7 +105,7 @@ The MCP tool is `capturePage`.
 When deployed as a Hugging Face Space, the remote MCP endpoint is:
 
 ```text
-https://fozagtx-eyez.hf.space/mcp
+https://pima5-eyez.hf.space/mcp
 ```
 
 ### Testing
@@ -268,7 +268,7 @@ Optional Space secrets:
 After the Space builds, test:
 
 ```bash
-curl https://fozagtx-eyez.hf.space/health
+curl https://pima5-eyez.hf.space/health
 ```
 
 ### MCP Server

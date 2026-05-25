@@ -21,7 +21,7 @@ jobs:
       - name: Upload Space
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
-          HF_USERNAME: fozagtx
+          HF_USERNAME: pima5
           HF_SPACE: eyez
         run: |
           python <<'PY'
