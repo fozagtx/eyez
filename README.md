@@ -6,6 +6,8 @@
 
 Pay per capture Model Context Protocol (MCP) server that enables AI agents to capture JavaScript-heavy webpages through x402 payments on Arc Testnet USDC.
 
+![Agent vision flow: sense, see, think, interact](./docs/images/agentVisionFlow.png)
+
 ## Space Config
 
 | Field | Value |
